@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2b1d4a">
+<title>花語寶石園</title>
+<link rel="icon" href="a/g0.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- game layout -->
+  <div id="scene">
+    <div id="sceneBg"></div>
+    <div id="sceneItems"></div>
+    <canvas id="fx"></canvas>
+  </div>
+  <div id="hud">
+    <div class="pill" id="lvPill">第 1 關</div>
+    <div class="pill" id="movesPill"><span class="sm">步數</span> <b id="moves">25</b></div>
+    <button class="iconBtn" id="btnMenu" aria-label="選單">⚙️</button>
+  </div>
+  <div id="goals"></div>
+  <div id="boardWrap"><canvas id="board"></canvas></div>
+  <div id="tray">
+    <div id="meter"><div id="meterFill"></div><span id="meterTxt">能量</span></div>
+    <div id="slots"></div>
+  </div>
+  <div id="mascot"><img id="mascotImg" alt=""><div id="bubble"></div></div>
+  <div id="floaters"></div>
+
+  <!-- screens -->
+  <div id="title" class="screen show">
+    <div class="titleBg"></div>
+    <div class="logo"><div class="l1">花語寶石園</div><div class="l2">Gem Blossom Garden</div></div>
+    <div class="titleChars"><img src="a/ch_fox.png"><img src="a/ch_panda.png"><img src="a/ch_bunny.png"></div>
+    <button class="big glow" id="btnStart">點一下 開始</button>
+  </div>
+
+  <div id="select" class="screen">
+    <h1>選擇你的夥伴</h1>
+    <div id="cards"></div>
+  </div>
+
+  <div id="home" class="screen">
+    <div class="homeTop"><div class="pill" id="starPill">⭐ 0</div><button class="iconBtn" id="btnSet2">⚙️</button></div>
+    <div class="homeMid">
+      <img id="homeChar" class="breathe">
+      <div id="homeName"></div>
+    </div>
+    <div class="homeBtns">
+      <button class="big glow" id="btnPlay">開始 第 1 關</button>
+      <button class="big alt" id="btnGarden">🌷 逛逛花園</button>
+    </div>
+  </div>
+
+  <div id="gardenBar" class="hidden"><div class="gTip">點點花園裡的東西和小動物吧！</div><button class="big alt" id="btnGardenBack">← 回去</button></div>
+
+  <div id="video" class="screen">
+    <video id="vid" playsinline muted webkit-playsinline preload="auto"></video>
+    <div id="vidText"></div>
+    <button class="big glow" id="vidBtn">繼續 ▶</button>
+  </div>
+
+  <div id="modal" class="screen"><div class="panel" id="panel"></div></div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
