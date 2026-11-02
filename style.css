@@ -126,3 +126,15 @@ button{font-family:inherit;font-weight:900;border:0;cursor:pointer;touch-action:
  .card .pf{width:32%}
  #select h1{font-size:calc(24px*var(--fs))}
 }
+
+/* v1.0.1: merge tutorial + explicit goals + contrast */
+#finger{display:none;position:fixed;left:0;top:0;font-size:calc(58px*var(--fs));z-index:70;pointer-events:none;filter:drop-shadow(0 4px 4px #000a);animation:fing 2.2s infinite ease-in-out}
+@keyframes fing{0%{transform:translate(var(--ax),calc(var(--ay) - 30px))}20%{transform:translate(var(--ax),var(--ay)) scale(.85)}35%{transform:translate(var(--ax),calc(var(--ay) - 20px))}60%{transform:translate(var(--bx),calc(var(--by) - 20px))}75%{transform:translate(var(--bx),var(--by)) scale(.85)}100%{transform:translate(var(--bx),calc(var(--by) - 30px))}}
+#mergeTip{display:none;position:fixed;z-index:69;pointer-events:none;background:#fffde7;color:#2b1d4a;border:4px solid #ff9800;border-radius:18px;padding:8px 12px;font-weight:900;font-size:calc(21px*var(--fs));line-height:1.3;text-align:center;box-shadow:0 6px 18px #0008}
+.slot.need{border:4px solid #69f0ae;box-shadow:0 0 22px #69f0ae,inset 0 0 14px #69f0ae;animation:pulse .8s infinite}
+.goal{font-weight:900;color:#fff;text-shadow:0 2px 0 #000,0 0 4px #000}
+.goal .gl{font-size:calc(15px*var(--fs));margin-right:2px}
+.goal.tier .gt{display:flex;flex-direction:column;line-height:1.15}
+.goal.tier b{font-size:calc(19px*var(--fs))}
+.goal.tier small{font-size:calc(14px*var(--fs));color:#fff59d}
+#meterTxt{color:#fff!important;font-weight:900;text-shadow:0 0 3px #000,0 2px 0 #000,0 0 6px #000;-webkit-text-stroke:1px #1b0f33}

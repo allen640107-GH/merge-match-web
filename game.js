@@ -145,9 +145,9 @@ function rc(){return (Math.random()*nColors)|0;}
 function mk(c,r,col,s=0){return{id:++gid,c,s,x:col,y:r,sc:1,a:1,rot:0};}
 function levelDef(n){
  const colors=n<=2?5:6;const moves=Math.max(20,26-Math.floor(n/4));const g=[];
- g.push({k:'gem',c:(n*2+1)%6,n:Math.min(12+n*3,40)});
+ g.push({k:'gem',c:(n*2+1)%6,n:n<=10?6+n*3:Math.min(12+n*3,40)});
  if(n>=2)g.push({k:'tier',t:Math.min(1+Math.floor((n-1)/3),3),n:1});
- if(n>=5)g.push({k:'gem',c:(n*5+3)%6,n:Math.min(10+n*2,35)});
+ if(n>=5)g.push({k:'gem',c:(n*5+3)%6,n:n<=10?4+n*2:Math.min(10+n*2,35)});
  return{n,colors,moves,goals:g};
 }
 function newBoard(){
@@ -254,15 +254,15 @@ function countGem(c){goalState.forEach(g=>{if(g.k==='gem'&&g.c===c&&g.left>0)g.l
 function countTier(t){goalState.forEach(g=>{if(g.k==='tier'&&g.t===t&&g.left>0)g.left--;});updGoals();}
 function goalsDone(){return goalState.every(g=>g.left<=0);}
 function updGoals(){
- goalsEl.innerHTML=goalState.map(g=>`<div class="goal ${g.left<=0?'done':''}"><img src="a/${g.k==='gem'?'g'+g.c:'t'+g.t}.png"><span>${g.left<=0?'✔':g.left}</span></div>`).join('');
+ goalsEl.innerHTML=goalState.map(g=>g.k==='tier'?`<div class="goal tier ${g.left<=0?'done':''}"><img src="a/t${g.t}.png"><div class="gt"><b>合成 ${TIERNAME[g.t]} ×${Math.max(0,g.left)}${g.left<=0?' ✔':''}</b><small>點托盤裡兩個${TIERNAME[g.t-1]}</small></div></div>`:`<div class="goal ${g.left<=0?'done':''}"><small class="gl">消除</small><img src="a/g${g.c}.png"><span>${g.left<=0?'✔':g.left}</span></div>`).join('');
 }
 function updHud(){$('#moves').textContent=movesLeft;$('#lvPill').textContent='第 '+level.n+' 關';}
 function addEnergy(n){
  S.energy+=n;
- while(S.energy>=SEED_COST){const i=S.tray.indexOf(-1);if(i<0){S.energy=SEED_COST;break;}S.energy-=SEED_COST;S.tray[i]=0;flySeed(i);}
+ while(S.energy>=seedCost()){const i=S.tray.indexOf(-1);if(i<0){S.energy=seedCost();break;}S.energy-=seedCost();S.tray[i]=0;flySeed(i);}
  updMeter();save();
 }
-function updMeter(){$('#meterFill').style.width=(S.energy/SEED_COST*100)+'%';$('#meterTxt').textContent=S.tray.indexOf(-1)<0&&S.energy>=SEED_COST?'點擊合成騰出空間':'能量 '+S.energy+' / '+SEED_COST;}
+function updMeter(){$('#meterFill').style.width=(S.energy/seedCost()*100)+'%';$('#meterTxt').textContent=S.tray.indexOf(-1)<0&&S.energy>=seedCost()?'點擊合成騰出空間':'能量 '+S.energy+' / '+seedCost();}
 function flySeed(i){
  const br=bw.getBoundingClientRect();const f=document.createElement('img');f.src='a/t0.png';f.className='fly';
  f.style.left=(br.left+br.width/2-22)+'px';f.style.top=(br.top+br.height/2-22)+'px';f.style.transform='scale(1.6)';$('#floaters').appendChild(f);
@@ -273,7 +273,7 @@ function flySeed(i){
 function renderTray(hideIdx){
  const el=$('#slots');el.innerHTML='';
  const cnt={};S.tray.forEach(t=>{if(t>=0)cnt[t]=(cnt[t]||0)+1;});
- S.tray.forEach((t,i)=>{const d=document.createElement('div');d.className='slot'+(t>=0&&t<5&&cnt[t]>=2?' can':'');
+ S.tray.forEach((t,i)=>{const d=document.createElement('div');const mp=mergePair()||[];d.className='slot'+(t>=0&&t<5&&cnt[t]>=2?' can':'')+(mp.includes(i)?' need':'');
   if(t>=0&&i!==hideIdx)d.innerHTML=`<img src="a/t${t}.png"><span class="tl">${t+1}</span>`;
   d.onpointerup=()=>tapSlot(i);el.appendChild(d);});
  updMeter();
@@ -292,7 +292,7 @@ async function tapSlot(i){
  S.tray[i]=t+1;renderTray();const s=$('#slots').children[i];s.classList.add('pop');
  oburst(b.left+b.width/2,b.top+b.height/2,'#ffe066',26);ostar(b.left+b.width/2,b.top+b.height/2);sfx('merge',t+1);
  countTier(t+1);addEnergy(0);save();
- floatText(TIERNAME[t+1]+'！',b.left+b.width/2,b.top-10);
+ floatText(TIERNAME[t+1]+'！',b.left+b.width/2,b.top-10);if(!S.tutMerge){S.tutMerge=true;save();}countTierFix(t+1);
  if(t+1>=4)react(4);
  if(t+1===5){busy=true;await playVideo('merge','水晶噴泉 誕生！',true);busy=false;S.seenFountain=true;save();}
  if(goalsDone()&&!busy&&level){busy=true;await wait(400);win();}
@@ -412,7 +412,7 @@ function goHome(){level=null;gardenMode=false;$('#gardenBar').classList.add('hid
 async function startLevel(){
  show(null);setGameVisible(true);level=levelDef(S.level);nColors=level.colors;movesLeft=level.moves;extraUsed=false;
  goalState=level.goals.map(g=>Object.assign({left:g.n},g));updGoals();updHud();renderTray();layout();
- busy=true;newBoard();await dropIn();busy=false;idleT=0;
+ busy=true;newBoard();await dropIn();busy=false;idleT=0;giftSeeds();
  const ch=CHARS[S.char];say(S.level===1?'用手指滑動寶石，三個連線就消除！':ch.cheers[0]);
 }
 function setGameVisible(v){[hud,goalsEl,bw,tray].forEach(e=>e.style.display=v?'':'none');}
@@ -473,4 +473,20 @@ setChar();setGameVisible(false);renderTray();layout();
 assetP.then(()=>requestAnimationFrame(frame));
 // expose for automated tests
 let wdT=0;setInterval(()=>{const scr=document.querySelector('.screen.show');if(level&&busy&&!scr&&!tweens.length){wdT+=1;if(wdT>=4){wdT=0;console.warn('watchdog unstick');safeRefill().catch(()=>{}).finally(()=>{busy=false;});}}else wdT=0;},1000);
-window.__G={get N(){return N},mk,get grid(){return grid},get busy(){return busy},findMove,trySwap,get S(){return S},get goalState(){return goalState},get movesLeft(){return movesLeft},set movesLeft(v){movesLeft=v}};
+/* ---------- merge tutorial / helpers ---------- */
+function seedCost(){return level&&level.n<=10?8:SEED_COST;}
+function countTierFix(t){}
+function tierNeed(){return goalState.find(g=>g.k==='tier'&&g.left>0);}
+function mergePair(){if(!level)return null;const need=tierNeed();if(!need)return null;for(let t=need.t-1;t>=0;t--){const idx=[];S.tray.forEach((x,i)=>{if(x===t)idx.push(i);});if(idx.length>=2)return idx.slice(0,2);}return null;}
+function giftSeeds(){const need=tierNeed();if(!need||level.n>10)return;const t=need.t-1;let have=S.tray.filter(x=>x===t).length;
+ if(have>=2)return;let given=0;for(let i=0;i<NSLOT&&have<2;i++){if(S.tray[i]===-1){S.tray[i]=t;have++;given++;}}
+ if(given){renderTray();save();say('送你'+TIERNAME[t]+'！點一下托盤合成看看～');}}
+function updFinger(){const f=$('#finger'),tip=$('#mergeTip');if(!f)return;const p=(level&&!busy&&!document.querySelector('.screen.show'))?mergePair():null;
+ const on=p&&(!S.tutMerge||idleT>4000);
+ if(!on){f.style.display='none';tip.style.display='none';return;}
+ const sl=$('#slots').children;if(!sl[p[1]])return;const a=sl[p[0]].getBoundingClientRect(),b=sl[p[1]].getBoundingClientRect();
+ f.style.setProperty('--ax',(a.left+a.width*.35)+'px');f.style.setProperty('--ay',(a.top+a.height*.45)+'px');f.style.setProperty('--bx',(b.left+b.width*.35)+'px');f.style.setProperty('--by',(b.top+b.height*.45)+'px');f.style.display='block';
+ const t=S.tray[p[0]];tip.innerHTML='👆 點一下發光的'+TIERNAME[t]+'<br>兩個一樣就會合成「'+TIERNAME[t+1]+'」！';tip.style.display='block';
+ const tw=Math.min(innerWidth-20,420);tip.style.width=tw+'px';tip.style.left=Math.max(10,Math.min(innerWidth-tw-10,(a.left+b.right)/2-tw/2))+'px';tip.style.top=Math.max(10,a.top-tip.offsetHeight-14)+'px';}
+setInterval(updFinger,250);
+window.__G={mergePair,get N(){return N},mk,get grid(){return grid},get busy(){return busy},findMove,trySwap,get S(){return S},get goalState(){return goalState},get movesLeft(){return movesLeft},set movesLeft(v){movesLeft=v}};
