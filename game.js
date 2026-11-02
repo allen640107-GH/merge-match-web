@@ -174,10 +174,13 @@ function findMove(){
 }
 function swapG(r1,c1,r2,c2){const t=grid[r1][c1];grid[r1][c1]=grid[r2][c2];grid[r2][c2]=t;}
 async function trySwap(r1,c1,r2,c2){
- if(busy||!inB(r2,c2)||movesLeft<=0)return;busy=true;hint=null;idleT=0;sel=null;
- const a=grid[r1][c1],b=grid[r2][c2];sfx('swap');swapG(r1,c1,r2,c2);
+ if(busy||!inB(r2,c2)||movesLeft<=0)return;
+ try{await trySwap0(r1,c1,r2,c2);}catch(e){console.error(e);await safeRefill();busy=false;}
+}
+async function trySwap0(r1,c1,r2,c2){busy=true;hint=null;idleT=0;sel=null;
+ const a=grid[r1][c1],b=grid[r2][c2];if(!a||!b){await safeRefill();busy=false;return;}sfx('swap');swapG(r1,c1,r2,c2);
  await Promise.all([tween(a,{x:c2,y:r2},170),tween(b,{x:c1,y:r1},170)]);
- if(a.s===4||b.s===4){movesLeft--;updHud();await rainbowSwap(a,b,r1,c1,r2,c2);await cascade(null);return endTurn();}
+ if(a.s===4||b.s===4){movesLeft--;updHud();await rainbowSwap(a,b,r1,c1,r2,c2);await gravity();await cascade(null);return endTurn();}
  const m=findMatches();
  if(!m.length){sfx('nope');swapG(r1,c1,r2,c2);await Promise.all([tween(a,{x:c1,y:r1},170),tween(b,{x:c2,y:r2},170)]);busy=false;return;}
  movesLeft--;updHud();await cascade(m,[[r2,c2],[r1,c1]]);endTurn();
@@ -234,7 +237,9 @@ async function gravity(){
   let k=0;for(let r=w;r>=0;r--){const g=mk(rc(),-1-k,c);k++;grid[r][c]=g;anims.push(tween(g,{y:r},160+(r+k)*55,ease.bounce));}}
  await Promise.all(anims);
 }
+async function safeRefill(){let holes=false;for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(!grid[r][c])holes=true;if(holes){await gravity();await cascade(null);}}
 async function endTurn(){
+ try{await safeRefill();}catch(e){console.error(e);}
  updGoals();
  if(goalsDone()){busy=true;await wait(500);return win();}
  if(movesLeft<=0){busy=true;await wait(400);return outOfMoves();}
@@ -467,4 +472,5 @@ document.addEventListener('visibilitychange',()=>{if(!AC)return;if(document.hidd
 setChar();setGameVisible(false);renderTray();layout();
 assetP.then(()=>requestAnimationFrame(frame));
 // expose for automated tests
-window.__G={get grid(){return grid},get busy(){return busy},findMove,trySwap,get S(){return S},get goalState(){return goalState},get movesLeft(){return movesLeft}};
+let wdT=0;setInterval(()=>{const scr=document.querySelector('.screen.show');if(level&&busy&&!scr&&!tweens.length){wdT+=1;if(wdT>=4){wdT=0;console.warn('watchdog unstick');safeRefill().catch(()=>{}).finally(()=>{busy=false;});}}else wdT=0;},1000);
+window.__G={get N(){return N},mk,get grid(){return grid},get busy(){return busy},findMove,trySwap,get S(){return S},get goalState(){return goalState},get movesLeft(){return movesLeft},set movesLeft(v){movesLeft=v}};
