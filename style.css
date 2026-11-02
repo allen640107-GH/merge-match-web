@@ -138,3 +138,27 @@ button{font-family:inherit;font-weight:900;border:0;cursor:pointer;touch-action:
 .goal.tier b{font-size:calc(19px*var(--fs))}
 .goal.tier small{font-size:calc(14px*var(--fs));color:#fff59d}
 #meterTxt{color:#fff!important;font-weight:900;text-shadow:0 0 3px #000,0 2px 0 #000,0 0 6px #000;-webkit-text-stroke:1px #1b0f33}
+/* ---- ambient motion (transform/opacity only, GPU-cheap) ---- */
+.amb{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+#home>*:not(.amb){position:relative;z-index:1}
+.cloud{position:absolute;width:38vmax;height:12vmax;border-radius:50%;background:radial-gradient(closest-side,#fffffff0,#ffffff00);filter:blur(2px);opacity:.75;will-change:transform;animation:drift linear infinite}
+.cloud.c1{top:4%;animation-duration:70s}.cloud.c2{top:14%;width:28vmax;opacity:.55;animation-duration:110s;animation-delay:-50s}.cloud.c3{top:24%;width:46vmax;opacity:.4;animation-duration:150s;animation-delay:-20s}
+@keyframes drift{from{transform:translateX(-50vmax)}to{transform:translateX(140vw)}}
+.ray{position:absolute;top:-20%;left:55%;width:30vmax;height:140%;background:linear-gradient(#fff6c855,#fff6c800);transform-origin:top;animation:ray 7s ease-in-out infinite;mix-blend-mode:screen}
+.ray.r2{left:25%;width:18vmax;animation-delay:-3s;animation-duration:9s}
+@keyframes ray{0%,100%{opacity:.25;transform:rotate(18deg)}50%{opacity:.6;transform:rotate(12deg)}}
+.fly{will-change:transform}
+.bfly{position:absolute;font-size:calc(28px*var(--fs));animation:bfly 18s linear infinite}
+.bfly.b2{animation-duration:24s;animation-delay:-9s;top:55%}.bfly.b3{animation-duration:30s;animation-delay:-17s;top:35%;font-size:calc(22px*var(--fs))}
+.bfly span{display:inline-block;animation:flapE .25s ease-in-out infinite alternate}
+@keyframes flapE{to{transform:scaleX(.4)}}
+@keyframes bfly{0%{transform:translate(-10vw,40vh)}25%{transform:translate(25vw,30vh) rotate(8deg)}50%{transform:translate(55vw,45vh)}75%{transform:translate(85vw,28vh) rotate(-8deg)}100%{transform:translate(115vw,38vh)}}
+.spk{position:absolute;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 10px 3px #fff8b0;animation:twk 3s ease-in-out infinite}
+@keyframes twk{0%,100%{opacity:0;transform:scale(.3)}50%{opacity:1;transform:scale(1)}}
+#homeChar,#fChar,.card img,.endChars img{animation:breathe 3.2s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.025,.975) translateY(1%)}}
+#sceneBg,#home{animation:kb 40s ease-in-out infinite alternate}
+#home{animation-name:kbpos}
+@keyframes kb{from{transform:scale(1.04) translateX(-1%)}to{transform:scale(1.1) translateX(1%)}}
+@keyframes kbpos{from{background-position:45% 60%}to{background-position:55% 70%}}
+@media (prefers-reduced-motion:reduce){.amb,#sceneBg,#home,#homeChar{animation:none!important}.amb{display:none}}
