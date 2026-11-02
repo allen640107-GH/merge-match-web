@@ -259,10 +259,10 @@ function updGoals(){
 function updHud(){$('#moves').textContent=movesLeft;$('#lvPill').textContent='第 '+level.n+' 關';}
 function addEnergy(n){
  S.energy+=n;
- while(S.energy>=seedCost()){const i=S.tray.indexOf(-1);if(i<0){S.energy=seedCost();break;}S.energy-=seedCost();S.tray[i]=0;flySeed(i);}
+ while(S.energy>=seedCost()){let i=S.tray.indexOf(-1);if(i<0){i=autoPlant();if(i<0){S.energy=seedCost();break;}}S.energy-=seedCost();S.tray[i]=0;flySeed(i);}
  updMeter();save();
 }
-function updMeter(){$('#meterFill').style.width=(S.energy/seedCost()*100)+'%';$('#meterTxt').textContent=S.tray.indexOf(-1)<0&&S.energy>=seedCost()?'點擊合成騰出空間':'能量 '+S.energy+' / '+seedCost();}
+function updMeter(){$('#meterFill').style.width=(S.energy/seedCost()*100)+'%';$('#meterTxt').textContent=S.tray.indexOf(-1)<0&&S.energy>=seedCost()?'托盤滿了：點一顆寶物種到花園':'能量 '+S.energy+' / '+seedCost();}
 function flySeed(i){
  const br=bw.getBoundingClientRect();const f=document.createElement('img');f.src='a/t0.png';f.className='fly';
  f.style.left=(br.left+br.width/2-22)+'px';f.style.top=(br.top+br.height/2-22)+'px';f.style.transform='scale(1.6)';$('#floaters').appendChild(f);
@@ -282,7 +282,7 @@ async function tapSlot(i){
  initAudio();const t=S.tray[i];if(t<0)return;
  const j=S.tray.findIndex((x,k)=>k!==i&&x===t);
  const el=$('#slots').children[i];
- if(t>=5||j<0){sfx('tap');el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');say(t>=5?'最高級了！過關時會種進花園':'再找一個「'+TIERNAME[t]+'」就能合成！');return;}
+ if(t>=5||j<0){sfx('tap');el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');trayMenu(i);return;}
  // fly j -> i
  const a=$('#slots').children[j].getBoundingClientRect(),b=el.getBoundingClientRect();
  const f=document.createElement('img');f.src='a/t'+t+'.png';f.className='fly';f.style.width=a.width+'px';f.style.height=a.height+'px';f.style.left=a.left+'px';f.style.top=a.top+'px';$('#floaters').appendChild(f);
@@ -490,3 +490,18 @@ function updFinger(){const f=$('#finger'),tip=$('#mergeTip');if(!f)return;const 
  const tw=Math.min(innerWidth-20,420);tip.style.width=tw+'px';tip.style.left=Math.max(10,Math.min(innerWidth-tw-10,(a.left+b.right)/2-tw/2))+'px';tip.style.top=Math.max(10,a.top-tip.offsetHeight-14)+'px';}
 setInterval(updFinger,250);
 window.__G={mergePair,get N(){return N},mk,get grid(){return grid},get busy(){return busy},findMove,trySwap,get S(){return S},get goalState(){return goalState},get movesLeft(){return movesLeft},set movesLeft(v){movesLeft=v}};
+
+/* ---- tray deadlock fix: plant / sell a single item; auto-plant when full ---- */
+function plantItem(i){const t=S.tray[i];if(t<0)return;S.garden.push({t:Math.max(1,t),x:.08+Math.random()*.84,y:.58+Math.random()*.38});if(S.garden.length>40)S.garden.sort((a,b)=>b.t-a.t).length=40;S.tray[i]=-1;try{renderGarden();}catch(e){}}
+function sellVal(t){return Math.max(2,(t+1)*3);}
+function autoPlant(){let lo=-1;S.tray.forEach((t,i)=>{if(t>=0&&(lo<0||t<S.tray[lo]))lo=i;});if(lo<0)return -1;
+ const t=S.tray[lo];plantItem(lo);try{floatText(TIERNAME[t]+' 種到花園了！',innerWidth/2,innerHeight*.5);}catch(e){}return lo;}
+function trayMenu(i){const t=S.tray[i];if(t<0)return;const v=sellVal(t);const wasBusy=busy;
+ modal(`<h2><img src="a/t${t}.png" style="height:1.6em;vertical-align:middle"> ${TIERNAME[t]}</h2><p>${t<5?'再找一個一樣的「'+TIERNAME[t]+'」就能合成。<br>':''}托盤卡住了嗎？可以：</p>
+ <div class="row"><button class="big green" id="tPlant">🌷 種到花園</button></div>
+ <div class="row"><button class="big glow" id="tSell">收成換 ⚡能量 +${v}</button></div>
+ <div class="row"><button class="big alt" id="tKeep">留著</button></div>`);
+ const close=()=>{show(null);busy=wasBusy;renderTray();save();if(typeof updMeter==='function')updMeter();};
+ $('#tPlant').onclick=()=>{plantItem(i);sfx('seed');close();say('種好了！托盤空出一格');addEnergy(0);};
+ $('#tSell').onclick=()=>{S.tray[i]=-1;S.energy+=v;sfx('seed');close();say('收成了！');addEnergy(0);};
+ $('#tKeep').onclick=close;}
