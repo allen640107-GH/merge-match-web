@@ -15,14 +15,27 @@ const CHARS={
 };
 const IMG={};
 function loadImg(k,src){return new Promise(r=>{const i=new Image();i.onload=()=>{IMG[k]=i;r()};i.onerror=()=>r();i.src=src;});}
-const assetP=Promise.all([...[0,1,2,3,4,5].map(i=>loadImg('g'+i,'a/g'+i+'.png')),...[0,1,2,3,4,5].map(i=>loadImg('t'+i,'a/t'+i+'.png'))]);
+const assetP=Promise.all([...[0,1,2,3,4,5].map(i=>loadImg('g'+i,'a/g'+i+'.png')),...[0,1,2,3,4,5].map(i=>loadImg('t'+i,'a/t'+i+'.png')),...['ice','vine','crate','acorn'].map(k=>loadImg(k,'a/'+k+'.png'))]);
 
 /* ---------- save (never wiped; merged with defaults) ---------- */
 const SKEY='gbg_save_v1';
-const DEF={v:1,char:null,level:1,stars:{},garden:[{t:2,x:.3,y:.82},{t:1,x:.62,y:.9}],tray:[0,0,-1,-1,-1,-1],energy:0,fs:1.15,sfx:true,music:true,seenFountain:false};
+const DEF={v:2,coins:0,seeds:{wheat:3,carrot:1},inv:{egg:0,milk:0,wool:0},boost:{hammer:1,potion:1,moves:1},farm:{plots:[null,null,null,null],animals:[{k:'hen',t0:0}],decos:[]},daily:{last:'',streak:0},seenCh:{},ended:false,char:null,level:1,stars:{},garden:[{t:2,x:.3,y:.82},{t:1,x:.62,y:.9}],tray:[0,0,-1,-1,-1,-1],energy:0,fs:1.15,sfx:true,music:true,seenFountain:false};
 let S;
 try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem(SKEY)||'{}'));}catch(e){S=Object.assign({},DEF);}
 if(!Array.isArray(S.tray)||S.tray.length!==NSLOT)S.tray=DEF.tray.slice();
+['seeds','inv','boost','farm','daily','seenCh'].forEach(k=>{if(!S[k]||typeof S[k]!=='object')S[k]=JSON.parse(JSON.stringify(DEF[k]));});
+['coins'].forEach(k=>{if(typeof S[k]!=='number')S[k]=0;});
+if(!S.farm.plots)S.farm.plots=[null,null,null,null];if(!S.farm.animals)S.farm.animals=[];if(!S.farm.decos)S.farm.decos=[];
+S.migrated=S.migrated||null;
+(function migrate(){ // v1 -> v2: endless levels -> 50 hand-made levels; nothing is deleted
+ const raw=(()=>{try{return JSON.parse(localStorage.getItem('gbg_save_v1')||'{}')}catch(e){return{}}})();
+ if(raw.level&&(raw.v||1)<2&&!S.migrated){const old=raw.level||1;
+  const nl=Math.max(1,Math.min(50,Math.round((old-1)*0.8)+1));
+  S.v1Level=old;S.level=nl;const st={};for(let i=1;i<nl;i++)st[i]=Math.max(1,(raw.stars||{})[i]||1);S.stars=st;
+  S.coins+=100+20*(old-1);S.migrated={from:old,to:nl,at:Date.now()};S.v=2;
+  try{localStorage.setItem('gbg_save_v1_backup',JSON.stringify(raw));}catch(e){}
+ } else if(!S.migrated){S.migrated={fresh:true};S.v=2;}
+})();
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(S));}catch(e){}}
 function applyFs(){document.documentElement.style.setProperty('--fs',S.fs);}
 applyFs();
@@ -62,6 +75,13 @@ const SFX={
  chime(t){tone(PENTA[3+t],.8,'sine',.18);tone(PENTA[5+t]||2093,.6,'sine',.07,.05);},
  tap(){tone(880,.08,'sine',.1);},
  win(){[0,2,4,5,7,9].forEach((k,j)=>tone(PENTA[Math.min(k,10)],.7,'triangle',.16,j*.11));},
+ crate(){tone(150,.18,'square',.12,0,80);tone(95,.25,'triangle',.18,.03,60);},
+ ice(){tone(2400,.12,'sine',.12,0,3200);tone(3100,.18,'sine',.08,.05);},
+ vine(){tone(600,.18,'sawtooth',.05,0,300);tone(900,.15,'triangle',.08,.06,1300);},
+ coin(){tone(1568,.1,'square',.06);tone(2093,.25,'square',.06,.08);},
+ cluck(){tone(800,.06,'square',.06,0,600);tone(900,.08,'square',.06,.1,650);},
+ moo(){tone(180,.6,'sawtooth',.08,0,140);},
+ baa(){for(let i=0;i<4;i++)tone(420,.07,'sawtooth',.06,i*.07,400);},
  voice(){const b=500+Math.random()*200;tone(b,.09,'triangle',.12,0,b*1.4);tone(b*1.2,.1,'triangle',.1,.1,b*.9);}
 };
 function sfx(n,a){try{SFX[n](a)}catch(e){}}
@@ -80,7 +100,7 @@ function startBgm(){
 }
 
 /* ---------- layout ---------- */
-const app=$('#app'),scene=$('#scene'),hud=$('#hud'),goalsEl=$('#goals'),bw=$('#boardWrap'),cv=$('#board'),tray=$('#tray'),mascot=$('#mascot');
+const app=$('#app'),scene=$('#scene'),hud=$('#hud'),goalsEl=$('#goals'),bw=$('#boardWrap'),cv=$('#board'),tray=$('#tray'),mascot=$('#mascot'),boostEl=$('#boost');
 const ctx=cv.getContext('2d');
 const ofx=document.createElement('canvas');ofx.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:25';app.appendChild(ofx);
 const octx=ofx.getContext('2d');
@@ -98,13 +118,14 @@ function layout(){
  if(!wide){
   const mascotW=Math.min(W*.24,140*fs);const trayW=W-mascotW-2*m;
   const slot=(trayW-5*5)/NSLOT;const trayH=30*fs+6+slot;
-  const minScene=sa.t+hudH+goalH+20;
+  const bh=50*fs;const minScene=sa.t+hudH+goalH+bh+26;
   B=Math.min(W-2*m,H-minScene-trayH-3*m-sa.b);
   const sceneH=Math.min(H-B-trayH-3*m-sa.b, H*.42);
   const extra=H-sceneH-B-trayH-3*m-sa.b;
   place(scene,0,0,W,sceneH);
   place(hud,m,sa.t+m,W-2*m,hudH);
   place(goalsEl,m,sa.t+m+hudH+6,W-2*m,goalH);
+  place(boostEl,m,sceneH-bh-6,W-2*m,bh);
   const by=sceneH+m+extra*.3;
   place(bw,(W-B)/2,by,B,B);
   place(tray,m,by+B+m,trayW);
@@ -116,6 +137,7 @@ function layout(){
   place(scene,0,0,LW+1.5*m,H);
   place(hud,m,sa.t+m,LW,hudH);
   place(goalsEl,m,sa.t+m+hudH+8,LW,goalH);
+  place(boostEl,m,sa.t+m+hudH+goalH*2+20,LW,50*fs);
   const trayW=LW*.62;$('#slots').style.gridTemplateColumns='repeat(3,1fr)';
   const slot=(trayW-10)/3;const trayH=30*fs+6+slot*2+5;
   place(tray,m,H-sa.b-m-trayH,trayW);
@@ -127,7 +149,7 @@ function layout(){
 }
 addEventListener('resize',()=>setTimeout(layout,50));
 addEventListener('orientationchange',()=>setTimeout(layout,250));
-document.addEventListener('touchmove',e=>{if(!e.target.closest('#select,.panel'))e.preventDefault();},{passive:false});
+document.addEventListener('touchmove',e=>{if(!e.target.closest('#select,.panel,#map,#farm,#ending'))e.preventDefault();},{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('dblclick',e=>e.preventDefault());
 
@@ -142,24 +164,28 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 let grid=[],busy=true,level=null,movesLeft=0,extraUsed=false,goalState=[],nColors=5,idleT=0,hint=null,sel=null,gid=0,shakeT=0;
 const parts=[],beams=[],oparts=[];
 function rc(){return (Math.random()*nColors)|0;}
+let ice=[],boostMode=null;
+const matchable=g=>g&&g.c>=0&&!g.crate&&g.s!==4;
+const movable=g=>g&&!g.crate&&!g.vine;
+function acornNeed(){const g=goalState.find(x=>x.k==='acorn');if(!g)return 0;let on=0;grid.forEach(row=>row.forEach(t=>{if(t&&t.c===-2)on++;}));return g.left-on;}
+function newTile(r,c,top){if(top&&acornNeed()>0&&Math.random()<.1){return mk(-2,r,c);}return mk(rc(),r,c);}
 function mk(c,r,col,s=0){return{id:++gid,c,s,x:col,y:r,sc:1,a:1,rot:0};}
-function levelDef(n){
- const colors=n<=2?5:6;const moves=Math.max(20,26-Math.floor(n/4));const g=[];
- g.push({k:'gem',c:((n*2+1)%6)%colors,n:n<=10?6+n*3:Math.min(12+n*3,40)});
- if(n>=2)g.push({k:'tier',t:Math.min(1+Math.floor((n-1)/3),3),n:1});
- if(n>=5){let c2=((n*5+3)%6)%colors;if(c2===g[0].c)c2=(c2+1)%colors;g.push({k:'gem',c:c2,n:n<=10?4+n*2:Math.min(10+n*2,35)});}
- return{n,colors,moves,goals:g};
-}
-function newBoard(){
- grid=[];for(let r=0;r<N;r++){grid.push([]);for(let c=0;c<N;c++){let col;do{col=rc();}while((c>=2&&grid[r][c-1].c===col&&grid[r][c-2].c===col)||(r>=2&&grid[r-1][c].c===col&&grid[r-2][c].c===col));grid[r].push(mk(col,r,c));}}
- if(!findMove())return newBoard();
+function newBoard(tries=0){
+ const M=level.map;grid=[];ice=[];
+ for(let r=0;r<N;r++){grid.push([]);ice.push([]);for(let c=0;c<N;c++){const ch=M[r][c];ice[r].push(ch==='i'?1:ch==='I'?2:0);
+  if(ch==='c'||ch==='C'){const g=mk(-1,r,c);g.crate=ch==='C'?2:1;grid[r].push(g);continue;}
+  if(ch==='a'){grid[r].push(mk(-2,r,c));continue;}
+  const same=(a,b)=>a&&b&&a.c>=0&&a.c===b.c;let col;
+  do{col=rc();}while((c>=2&&grid[r][c-1].c===col&&grid[r][c-2].c===col)||(r>=2&&grid[r-1][c].c===col&&grid[r-2][c].c===col));
+  const g=mk(col,r,c);if(ch==='v')g.vine=true;grid[r].push(g);}}
+ if(!findMove()&&tries<60)return newBoard(tries+1);
 }
 function dropIn(){const ps=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const g=grid[r][c];g.y=r-N-2;ps.push(wait(c*40+(N-r)*30).then(()=>tween(g,{y:r},520,ease.bounce)));}return Promise.all(ps);}
 function inB(r,c){return r>=0&&c>=0&&r<N&&c<N;}
 function findMatches(){
  const runs=[];
- for(let r=0;r<N;r++){let s=0;for(let c=1;c<=N;c++){if(c<N&&grid[r][c]&&grid[r][s]&&grid[r][c].c===grid[r][s].c&&grid[r][c].s!==4&&grid[r][s].s!==4)continue;if(c-s>=3&&grid[r][s]&&grid[r][s].s!==4)runs.push({h:1,cells:Array.from({length:c-s},(_,i)=>[r,s+i])});s=c;}}
- for(let c=0;c<N;c++){let s=0;for(let r=1;r<=N;r++){if(r<N&&grid[r][c]&&grid[s][c]&&grid[r][c].c===grid[s][c].c&&grid[r][c].s!==4&&grid[s][c].s!==4)continue;if(r-s>=3&&grid[s][c]&&grid[s][c].s!==4)runs.push({h:0,cells:Array.from({length:r-s},(_,i)=>[s+i,c])});s=r;}}
+ for(let r=0;r<N;r++){let s=0;for(let c=1;c<=N;c++){if(c<N&&matchable(grid[r][c])&&matchable(grid[r][s])&&grid[r][c].c===grid[r][s].c)continue;if(c-s>=3&&matchable(grid[r][s]))runs.push({h:1,cells:Array.from({length:c-s},(_,i)=>[r,s+i])});s=c;}}
+ for(let c=0;c<N;c++){let s=0;for(let r=1;r<=N;r++){if(r<N&&matchable(grid[r][c])&&matchable(grid[s][c])&&grid[r][c].c===grid[s][c].c)continue;if(r-s>=3&&matchable(grid[s][c]))runs.push({h:0,cells:Array.from({length:r-s},(_,i)=>[s+i,c])});s=r;}}
  // merge runs sharing cells
  const groups=[];
  runs.forEach(run=>{const keys=new Set(run.cells.map(([a,b])=>a*N+b));let tgt=groups.find(g=>run.cells.some(([a,b])=>g.keys.has(a*N+b)));
@@ -168,17 +194,19 @@ function findMatches(){
   const hv=g.runs.some(r=>r.h)&&g.runs.some(r=>!r.h);let sp=0;if(mx>=5)sp=4;else if(hv)sp=3;else if(mx===4)sp=g.runs[0].h?1:2;return{cells,sp};});
 }
 function findMove(){
- for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(grid[r][c]&&grid[r][c].s===4)return[[r,c],inB(r,c+1)?[r,c+1]:[r,c-1]];
-  for(const[dr,dc]of[[0,1],[1,0]]){const r2=r+dr,c2=c+dc;if(!inB(r2,c2))continue;swapG(r,c,r2,c2);const ok=findMatches().length>0;swapG(r,c,r2,c2);if(ok)return[[r,c],[r2,c2]];}}
+ for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(grid[r][c]&&grid[r][c].s===4&&movable(grid[r][c])){for(const[dr,dc]of[[0,1],[0,-1],[1,0],[-1,0]]){const o=inB(r+dr,c+dc)&&grid[r+dr][c+dc];if(movable(o)&&o.c>=0)return[[r,c],[r+dr,c+dc]];}}
+  for(const[dr,dc]of[[0,1],[1,0]]){const r2=r+dr,c2=c+dc;if(!inB(r2,c2)||!movable(grid[r][c])||!movable(grid[r2][c2]))continue;swapG(r,c,r2,c2);const ok=findMatches().length>0;swapG(r,c,r2,c2);if(ok)return[[r,c],[r2,c2]];}}
  return null;
 }
 function swapG(r1,c1,r2,c2){const t=grid[r1][c1];grid[r1][c1]=grid[r2][c2];grid[r2][c2]=t;}
 async function trySwap(r1,c1,r2,c2){
  if(busy||!inB(r2,c2)||movesLeft<=0)return;
- try{await trySwap0(r1,c1,r2,c2);}catch(e){console.error(e);await safeRefill();busy=false;}
+ try{await trySwap0(r1,c1,r2,c2);}catch(e){console.error(e);try{await safeRefill();}catch(e2){}busy=false;}
 }
 async function trySwap0(r1,c1,r2,c2){busy=true;hint=null;idleT=0;sel=null;
- const a=grid[r1][c1],b=grid[r2][c2];if(!a||!b){await safeRefill();busy=false;return;}sfx('swap');swapG(r1,c1,r2,c2);
+ const a=grid[r1][c1],b=grid[r2][c2];if(!a||!b){await safeRefill();busy=false;return;}
+ if(!movable(a)||!movable(b)||((a.s===4||b.s===4)&&(a.c<0||b.c<0))){sfx('nope');const t=(a&&a.vine)?a:(b&&b.vine)?b:a;if(t){t.rot=.25;tween(t,{rot:0},300,ease.back);}if(a&&a.vine||b&&b.vine)say('被藤蔓纏住了，要在旁邊消除喔！');busy=false;return;}
+ sfx('swap');swapG(r1,c1,r2,c2);
  await Promise.all([tween(a,{x:c2,y:r2},170),tween(b,{x:c1,y:r1},170)]);
  if(a.s===4||b.s===4){movesLeft--;updHud();await rainbowSwap(a,b,r1,c1,r2,c2);await gravity();await cascade(null);return endTurn();}
  const m=findMatches();
@@ -219,23 +247,41 @@ function expand(set){
 async function clearSet(set,creates,combo){
  const keep=new Set(creates.map(o=>o.pos[0]*N+o.pos[1]));
  expand(set);
- const anims=[];let counted=0;
+ const anims=[];let counted=0;const hitC=new Set();
+ const dmgCrate=(r,c)=>{const k=r*N+c;if(hitC.has(k))return;const g=grid[r][c];if(!g||!g.crate)return;hitC.add(k);g.crate--;burst((c+.5)*cs,(r+.5)*cs,'#c98a4a',14);sfx('crate');
+  if(g.crate<=0){countObs('crate');anims.push(tween(g,{sc:0,a:0,rot:.5},260,ease.inq).then(()=>{if(grid[r][c]===g)grid[r][c]=null;}));}else{g.sc=.75;anims.push(tween(g,{sc:1},280,ease.back));}};
+ const hitIce=(r,c)=>{if(ice[r]&&ice[r][c]>0){ice[r][c]--;burst((c+.5)*cs,(r+.5)*cs,'#bfefff',12);sfx('ice');if(!ice[r][c])countObs('ice');}};
+ const around=(r,c)=>[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr,dc])=>{if(inB(r+dr,c+dc))dmgCrate(r+dr,c+dc);});
  set.forEach(k=>{const r=Math.floor(k/N),c=k%N,g=grid[r][c];if(!g)return;
+  if(g.crate){dmgCrate(r,c);return;}
+  if(g.c<0)return;
+  if(g.vine){g.vine=false;countObs('vine');burst((c+.5)*cs,(r+.5)*cs,'#5fd35f',16);sfx('vine');around(r,c);return;}
+  hitIce(r,c);around(r,c);
   if(keep.has(k)&&!g.s){return;}
   counted++;countGem(g.c);burst((c+.5)*cs,(r+.5)*cs,GEMC[g.c],g.s?18:9);
   anims.push(tween(g,{sc:0,a:0,rot:.6},220,ease.inq).then(()=>{if(grid[r][c]===g)grid[r][c]=null;}));});
- creates.forEach(o=>{const g=grid[o.pos[0]][o.pos[1]];if(!g)return;if(g.s){g.s=0;}const ng=g;ng.s=o.sp;ng.c=o.c;ng.sc=.4;anims.push(tween(ng,{sc:1},380,ease.back));sparkle((o.pos[1]+.5)*cs,(o.pos[0]+.5)*cs);});
- // created specials that were in set and replaced: ensure placed
- creates.forEach(o=>{if(!grid[o.pos[0]][o.pos[1]]){}});
- addEnergy(counted);
+ creates.forEach(o=>{const g=grid[o.pos[0]][o.pos[1]];if(!g||g.c<0||g.crate)return;const ng=g;ng.s=o.sp;ng.c=o.c;ng.sc=.4;anims.push(tween(ng,{sc:1},380,ease.back));sparkle((o.pos[1]+.5)*cs,(o.pos[0]+.5)*cs);});
+ addEnergy(counted);updGoals();
  await Promise.all(anims);
  creates.forEach(o=>{if(!grid[o.pos[0]][o.pos[1]]){const g=mk(o.c,o.pos[0],o.pos[1],o.sp);g.sc=.3;grid[o.pos[0]][o.pos[1]]=g;tween(g,{sc:1},300,ease.back);}});
 }
 async function gravity(){
  const anims=[];
- for(let c=0;c<N;c++){let w=N-1;for(let r=N-1;r>=0;r--){const g=grid[r][c];if(g){if(w!==r){grid[w][c]=g;grid[r][c]=null;const d=w-r;anims.push(tween(g,{y:w},140+d*55,ease.bounce));}w--;}}
-  let k=0;for(let r=w;r>=0;r--){const g=mk(rc(),-1-k,c);k++;grid[r][c]=g;anims.push(tween(g,{y:r},160+(r+k)*55,ease.bounce));}}
+ for(let c=0;c<N;c++){let r=N-1;
+  while(r>=0){while(r>=0&&grid[r][c]&&grid[r][c].crate)r--;if(r<0)break;
+   const bot=r;while(r>=0&&!(grid[r][c]&&grid[r][c].crate))r--;const top=r+1;
+   let w=bot;for(let k=bot;k>=top;k--){const g=grid[k][c];if(g){if(w!==k){grid[w][c]=g;grid[k][c]=null;anims.push(tween(g,{y:w},140+(w-k)*55,ease.bounce));}w--;}}
+   let n=0;for(let k=w;k>=top;k--){const g=newTile(k,c,top===0);if(top===0){g.y=-1-n;n++;anims.push(tween(g,{y:k},160+(k+n)*55,ease.bounce));}else{g.y=k;g.sc=0;anims.push(tween(g,{sc:1},320,ease.back));}grid[k][c]=g;}
+  }}
  await Promise.all(anims);
+ if(await collectAcorns())await gravity();
+}
+async function collectAcorns(){
+ let any=false;const anims=[];
+ for(let c=0;c<N;c++)for(let r=N-1;r>=0;r--){const g=grid[r][c];if(!g||g.c!==-2)continue;let ok=true;for(let k=r+1;k<N;k++)if(!(grid[k][c]&&grid[k][c].crate)){ok=false;break;}
+  if(ok){any=true;countObs('acorn');sfx('coin');sparkle((c+.5)*cs,(r+.5)*cs);anims.push(tween(g,{sc:1.6,a:0,y:r+.6},420,ease.out).then(()=>{if(grid[r][c]===g)grid[r][c]=null;}));}}
+ if(any){floatText('收集橡果！',W/2,bw.getBoundingClientRect().top+B*.8);await Promise.all(anims);}
+ return any;
 }
 async function safeRefill(){let holes=false;for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(!grid[r][c])holes=true;if(holes){await gravity();await cascade(null);}}
 async function endTurn(){
@@ -246,17 +292,19 @@ async function endTurn(){
  if(!findMove()){floatText('重新洗牌～',W/2,H/2);await wait(400);await shuffle();}
  busy=false;idleT=0;
 }
-async function shuffle(){const all=grid.flat();do{for(let i=all.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[all[i],all[j]]=[all[j],all[i]];}for(let r=0;r<N;r++)for(let c=0;c<N;c++)grid[r][c]=all[r*N+c];}while(findMatches().length||!findMove());
- await Promise.all(grid.flatMap((row,r)=>row.map((g,c)=>tween(g,{x:c,y:r},450,ease.back))));}
+async function shuffle(){const free=grid.flat().filter(g=>g&&g.c>=0&&!g.s&&!g.crate);let t=0;
+ do{free.forEach(g=>g.c=rc());t++;}while((findMatches().length||!findMove())&&t<300);
+ await Promise.all(free.map(g=>{g.sc=.3;return tween(g,{sc:1},450,ease.back);}));}
 
 /* ---------- goals / energy ---------- */
 function countGem(c){goalState.forEach(g=>{if(g.k==='gem'&&g.c===c&&g.left>0)g.left--;});}
 function countTier(t){goalState.forEach(g=>{if(g.k==='tier'&&g.t===t&&g.left>0)g.left--;});updGoals();}
+function countObs(k){goalState.forEach(g=>{if(g.k===k&&g.left>0)g.left--;});}
 function goalsDone(){return goalState.every(g=>g.left<=0);}
 function updGoals(){
- goalsEl.innerHTML=goalState.map(g=>g.k==='tier'?`<div class="goal tier ${g.left<=0?'done':''}"><img src="a/t${g.t}.png"><div class="gt"><b>合成 ${TIERNAME[g.t]} ×${Math.max(0,g.left)}${g.left<=0?' ✔':''}</b><small>點托盤裡兩個${TIERNAME[g.t-1]}</small></div></div>`:`<div class="goal ${g.left<=0?'done':''}"><small class="gl">消除</small><img src="a/g${g.c}.png"><span>${g.left<=0?'✔':g.left}</span></div>`).join('');
+ const GL={gem:'消除',ice:'敲冰',crate:'開箱',vine:'解藤',acorn:'收集'};goalsEl.innerHTML=goalState.map(g=>g.k==='tier'?`<div class="goal tier ${g.left<=0?'done':''}"><img src="a/t${g.t}.png"><div class="gt"><b>合成 ${TIERNAME[g.t]} ×${Math.max(0,g.left)}${g.left<=0?' ✔':''}</b><small>點托盤裡兩個${TIERNAME[g.t-1]}</small></div></div>`:`<div class="goal ${g.left<=0?'done':''}"><small class="gl">${GL[g.k]}</small><img src="a/${g.k==='gem'?'g'+g.c:g.k}.png"><span>${g.left<=0?'✔':g.left}</span></div>`).join('');
 }
-function updHud(){$('#moves').textContent=movesLeft;$('#lvPill').textContent='第 '+level.n+' 關';}
+function updHud(){$('#moves').textContent=movesLeft;$('#lvPill').textContent=(level.ch+1)+'-'+(((level.n-1)%10)+1);updBoost();}
 function addEnergy(n){
  S.energy+=n;
  while(S.energy>=seedCost()){let i=S.tray.indexOf(-1);if(i<0){i=autoPlant();if(i<0){S.energy=seedCost();break;}}S.energy-=seedCost();S.tray[i]=0;flySeed(i);}
@@ -342,7 +390,7 @@ function stepCritters(){critters.forEach(o=>{if(o.kind==='fly'){if(Math.hypot(o.
 /* ---------- input ---------- */
 let down=null;
 function cellAt(e){const r=cv.getBoundingClientRect();return[Math.floor((e.clientY-r.top)/(r.height/N)),Math.floor((e.clientX-r.left)/(r.width/N)),e.clientX,e.clientY];}
-cv.addEventListener('pointerdown',e=>{initAudio();e.preventDefault();idleT=0;hint=null;if(busy)return;const[r,c,x,y]=cellAt(e);if(!inB(r,c))return;down={r,c,x,y,moved:false};try{cv.setPointerCapture(e.pointerId);}catch(_){}});
+cv.addEventListener('pointerdown',e=>{initAudio();e.preventDefault();idleT=0;hint=null;if(busy)return;const[r,c,x,y]=cellAt(e);if(!inB(r,c))return;if(boostMode){useBoostAt(r,c);return;}down={r,c,x,y,moved:false};try{cv.setPointerCapture(e.pointerId);}catch(_){}});
 cv.addEventListener('pointermove',e=>{if(!down||down.moved||busy)return;const dx=e.clientX-down.x,dy=e.clientY-down.y;const th=cv.getBoundingClientRect().width/N*.28;
  if(Math.max(Math.abs(dx),Math.abs(dy))>th){down.moved=true;const[dr,dc]=Math.abs(dx)>Math.abs(dy)?[0,Math.sign(dx)]:[Math.sign(dy),0];sel=null;trySwap(down.r,down.c,down.r+dr,down.c+dc);}});
 cv.addEventListener('pointerup',e=>{if(!down)return;const d=down;down=null;if(d.moved||busy)return;
@@ -379,12 +427,16 @@ function drawBoard(now,dt){
    const rg=c.createRadialGradient(0,0,0,0,0,sz*.32);rg.addColorStop(0,'#fff');rg.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=rg;c.beginPath();c.arc(0,0,sz*.34,0,7);c.fill();c.fillStyle='#fff';drawStar(c,0,0,sz*.22);}
   else{
    if(g.s===3){const p=(Math.sin(now/200)+1)/2;const rg=c.createRadialGradient(0,0,sz*.2,0,0,sz*.62);rg.addColorStop(0,'rgba(255,200,80,.9)');rg.addColorStop(1,'rgba(255,120,0,0)');c.fillStyle=rg;c.beginPath();c.arc(0,0,sz*(.55+.07*p),0,7);c.fill();}
-   const im=IMG['g'+g.c];if(im)c.drawImage(im,-sz/2,-sz/2,sz,sz);
+   if(g.crate){const im=IMG.crate;const z=cs*.96*g.sc;if(im)c.drawImage(im,-z/2,-z/2,z,z);if(g.crate>1){c.fillStyle='#ffe082';c.strokeStyle='#5a2d00';c.lineWidth=3;c.font='900 '+(cs*.3)+'px sans-serif';c.textAlign='center';c.textBaseline='middle';c.strokeText('2',z*.3,z*.3);c.fillText('2',z*.3,z*.3);}c.restore();continue;}
+  if(g.c===-2){const im=IMG.acorn;const b=Math.sin(now/260+k)*cs*.04;if(im)c.drawImage(im,-sz/2,-sz/2+b,sz,sz);c.restore();continue;}
+  const im2=IMG['g'+g.c];if(im2)c.drawImage(im2,-sz/2,-sz/2,sz,sz);
+  if(g.vine&&IMG.vine){c.globalAlpha=.92*g.a;c.drawImage(IMG.vine,-cs*.5,-cs*.5,cs,cs);}
    if(g.s===1||g.s===2){c.save();if(g.s===2)c.rotate(Math.PI/2);c.globalCompositeOperation='lighter';c.fillStyle='rgba(255,255,255,.55)';c.fillRect(-sz*.5,-sz*.09,sz,sz*.18);c.fillStyle='#fff';
     const o=(now/300%1)*sz*.08;[[-1],[1]].forEach(([d])=>{c.beginPath();c.moveTo(d*sz*.52+d*o,0);c.lineTo(d*sz*.3+d*o,-sz*.16);c.lineTo(d*sz*.3+d*o,sz*.16);c.fill();});c.restore();}
    if(g.s===3){c.fillStyle='#fff';drawStar(c,sz*.28,-sz*.28,sz*.14);}
   }
   c.restore();}
+ if(ice.length&&IMG.ice){for(let r=0;r<N;r++)for(let k=0;k<N;k++){if(ice[r][k]){c.globalAlpha=ice[r][k]>1?.85:.55;c.drawImage(IMG.ice,k*cs+1,r*cs+1,cs-2,cs-2);}}c.globalAlpha=1;}
  // glints
  if(Math.random()<.04&&grid.length){const r=(Math.random()*N)|0,k=(Math.random()*N)|0;parts.push({x:(k+.3)*cs,y:(r+.3)*cs,vx:0,vy:0,life:1,col:'#fff',sz:cs*.1,star:true,glint:1});}
  c.globalCompositeOperation='lighter';
@@ -397,7 +449,7 @@ function drawO(dt){const c=octx;c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,
  c.globalAlpha=1;c.globalCompositeOperation='source-over';}
 
 /* ---------- screens ---------- */
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show',s.id===id));}
+function show(id){if(id==='modal'){$('#modal').classList.add('show');return;}document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show',s.id===id));}
 function setChar(){const ch=CHARS[S.char||'fox'];$('#mascotImg').src=ch.img;$('#homeChar').src=ch.img;$('#homeName').textContent=ch.full;}
 function buildSelect(){
  const el=$('#cards');el.innerHTML='';
@@ -408,14 +460,21 @@ function buildSelect(){
   el.appendChild(d);setTimeout(()=>{const v=d.querySelector('video');v.play().catch(()=>{});},100+i*200);});
 }
 function totalStars(){return Object.values(S.stars).reduce((a,b)=>a+b,0);}
-function goHome(){level=null;gardenMode=false;$('#gardenBar').classList.add('hidden');show('home');$('#btnPlay').textContent='開始 第 '+S.level+' 關';$('#starPill').textContent='⭐ '+totalStars();setChar();}
-async function startLevel(){
- show(null);setGameVisible(true);level=levelDef(S.level);nColors=level.colors;movesLeft=level.moves;extraUsed=false;
+function setSceneBg(ch){$('#sceneBg').style.backgroundImage='url('+CHAPTERS[ch].bg+')';}
+function goHome(){level=null;gardenMode=false;boostMode=null;$('#gardenBar').classList.add('hidden');show('home');
+ $('#btnPlay').textContent=S.level>NLEV?'🗺️ 重玩關卡':'開始 第 '+S.level+' 關';$('#starPill').textContent='⭐ '+totalStars();$('#coinPill').textContent='🪙 '+S.coins;
+ $('#homeCh').textContent=S.level>NLEV?'全部通關！🎉':'第 '+(chapterOf(S.level)+1)+' 章・'+CHAPTERS[chapterOf(S.level)].name;
+ setSceneBg(chapterOf(Math.min(S.level,NLEV)));$('#home').style.backgroundImage='url('+CHAPTERS[chapterOf(Math.min(S.level,NLEV))].bg+')';setChar();$('#btnFarm').classList.toggle('badge',farmReady()>0);
+ setTimeout(checkDaily,400);}
+async function startLevel(n){
+ if(typeof n!=='number')n=S.level;if(n>NLEV){openMap();return;}n=Math.min(n,S.level);
+ const ch=chapterOf(n);if(!S.seenCh[ch]){await chapterIntro(ch);}
+ show(null);setGameVisible(true);boostMode=null;setSceneBg(ch);level=levelDef(n);nColors=level.colors;movesLeft=level.moves;extraUsed=false;
  goalState=level.goals.map(g=>Object.assign({left:g.n},g));updGoals();updHud();renderTray();layout();
  busy=true;newBoard();await dropIn();busy=false;idleT=0;giftSeeds();
- const ch=CHARS[S.char];say(S.level===1?'用手指滑動寶石，三個連線就消除！':ch.cheers[0]);
+ const chr=CHARS[S.char];say(level.n===1?'用手指滑動寶石，三個連線就消除！':level.n%10===1&&level.n>1?CHAPTERS[level.ch].name+'，出發！':chr.cheers[0]);
 }
-function setGameVisible(v){[hud,goalsEl,bw,tray].forEach(e=>e.style.display=v?'':'none');}
+function setGameVisible(v){[hud,goalsEl,bw,tray,boostEl].forEach(e=>e.style.display=v?'':'none');}
 function modal(html){$('#panel').innerHTML=html;show('modal');}
 function outOfMoves(){
  modal(`<h2>步數用完了</h2><p>沒關係，慢慢來！<br>送你 5 步，繼續玩吧～</p><div class="row"><button class="big green" id="mMore">+5 步 繼續（免費）</button></div><div class="row"><button class="big alt" id="mRetry">重新開始這關</button></div>`);
@@ -423,20 +482,25 @@ function outOfMoves(){
  $('#mRetry').onclick=()=>{startLevel();};
 }
 async function win(){
- busy=true;sfx('win');react(5);
+ busy=true;boostMode=null;sfx('win');react(5);
  const stars=extraUsed?1:(movesLeft>=level.moves*.3?3:movesLeft>=level.moves*.12?2:1);
- S.stars[level.n]=Math.max(S.stars[level.n]||0,stars);
- // plant big items into garden
+ const n=level.n,first=!S.stars[n];
+ S.stars[n]=Math.max(S.stars[n]||0,stars);
  let planted=0;S.tray.forEach((t,i)=>{if(t>=2){S.garden.push({t,x:.08+Math.random()*.84,y:.58+Math.random()*.38});S.tray[i]=-1;planted++;}});
- if(S.garden.length<3+level.n){S.garden.push({t:Math.min(1+(level.n%4),4),x:.1+Math.random()*.8,y:.6+Math.random()*.35});planted++;}
+ if(S.garden.length<3+n){S.garden.push({t:Math.min(1+(n%4),4),x:.1+Math.random()*.8,y:.6+Math.random()*.35});planted++;}
  if(S.garden.length>40)S.garden.sort((a,b)=>b.t-a.t).length=40;
- const n=level.n;S.level=n+1;save();renderGarden();
- const unlock=n%5===0;
- await playVideo(unlock?'merge':'win',unlock?'新區域解鎖！':'過關！');
+ // rewards: coins + seeds
+ const coins=(first?40:15)+stars*10+level.ch*10;S.coins+=coins;
+ const sk=seedReward(n);const sn=stars>=3?2:1;S.seeds[sk]=(S.seeds[sk]||0)+sn;
+ if(n>=S.level)S.level=n+1;save();renderGarden();
+ const chEnd=n%10===0;
+ if(n===NLEV){await playVideo('end','全部完成！花園永遠美麗！');S.ended=true;save();showEnding();return;}
+ await playVideo(chEnd?'chap':'win',chEnd?'第 '+(level.ch+1)+' 章 完成！':'過關！');
  const st=[1,2,3].map(i=>`<span class="${i<=stars?'':'off'}" style="animation-delay:${i*.2}s">⭐</span>`).join('');
- modal(`<h2>第 ${n} 關 完成！</h2><div class="stars">${st}</div><p>${planted?'花園裡多了 '+planted+' 樣新裝飾 🌷':'花園更漂亮了！'}</p><div class="row"><button class="big glow" id="mNext">下一關 ▶</button></div><div class="row"><button class="big alt" id="mGarden">🌷 看看花園</button><button class="big alt" id="mHome">回首頁</button></div>`);
- const pr=$('#panel').getBoundingClientRect();setTimeout(()=>{for(let i=0;i<3;i++)setTimeout(()=>{oburst(pr.left+pr.width/2,pr.top+80,'#ffd54a',30);sfx('seed');},i*200);},100);
- $('#mNext').onclick=()=>startLevel();$('#mHome').onclick=()=>{setGameVisible(false);goHome();};$('#mGarden').onclick=()=>{show(null);setGameVisible(false);openGarden();};
+ modal(`<h2>第 ${n} 關 完成！</h2><div class="stars">${st}</div><div class="reward"><span>🪙 +${coins}</span><span><img src="a/${CROPS[sk].img}.png">${CROPS[sk].name}種子 ×${sn}</span></div>${chEnd?`<p class="unlock">🎉 新章節解鎖：${CHAPTERS[level.ch+1].name}</p>`:''}<div class="row"><button class="big glow" id="mNext">下一關 ▶</button></div><div class="row"><button class="big alt" id="mMap">🗺️ 地圖</button><button class="big alt" id="mFarm">🐔 農場</button><button class="big alt" id="mHome">回首頁</button></div>`);
+ const pr=$('#panel').getBoundingClientRect();setTimeout(()=>{for(let i=0;i<3;i++)setTimeout(()=>{oburst(pr.left+pr.width/2,pr.top+80,'#ffd54a',30);sfx('coin');},i*200);},100);
+ $('#mNext').onclick=()=>startLevel(n+1);$('#mHome').onclick=()=>{setGameVisible(false);goHome();};
+ $('#mMap').onclick=()=>{setGameVisible(false);level=null;openMap();};$('#mFarm').onclick=()=>{setGameVisible(false);level=null;openFarm();};
 }
 function playVideo(kind,text,skippable){
  return new Promise(res=>{const v=$('#vid');v.src='a/'+kind+'_'+(S.char||'fox')+'.mp4';v.currentTime=0;$('#vidText').textContent=text;show('video');
@@ -464,6 +528,7 @@ function settings(){
 /* ---------- wire up ---------- */
 $('#btnStart').onclick=()=>{initAudio();sfx('win');if(!S.char){buildSelect();show('select');}else goHome();};
 $('#btnPlay').onclick=()=>{initAudio();startLevel();};
+$('#btnMap').onclick=()=>{initAudio();openMap();};$('#btnFarm').onclick=()=>{initAudio();openFarm();};
 $('#btnGarden').onclick=()=>{initAudio();openGarden();};
 $('#btnGardenBack').onclick=()=>{gardenMode=false;$('#gardenBar').classList.add('hidden');layout();goHome();};
 $('#btnMenu').onclick=()=>{initAudio();settings();};$('#btnSet2').onclick=()=>{initAudio();settings();};
@@ -489,19 +554,19 @@ function updFinger(){const f=$('#finger'),tip=$('#mergeTip');if(!f)return;const 
  const t=S.tray[p[0]];tip.innerHTML='👆 點一下發光的'+TIERNAME[t]+'<br>兩個一樣就會合成「'+TIERNAME[t+1]+'」！';tip.style.display='block';
  const tw=Math.min(innerWidth-20,420);tip.style.width=tw+'px';tip.style.left=Math.max(10,Math.min(innerWidth-tw-10,(a.left+b.right)/2-tw/2))+'px';tip.style.top=Math.max(10,a.top-tip.offsetHeight-14)+'px';}
 setInterval(updFinger,250);
-window.__G={mergePair,get N(){return N},mk,get grid(){return grid},get busy(){return busy},findMove,trySwap,get S(){return S},get goalState(){return goalState},get movesLeft(){return movesLeft},set movesLeft(v){movesLeft=v}};
+window.__G={mergePair,get N(){return N},mk,get level(){return level},startLevel,openMap:()=>openMap(),openFarm:()=>openFarm(),farmTick:()=>renderFarm(),win:()=>win(),get ice(){return ice},get grid(){return grid},get busy(){return busy},findMove,trySwap,get S(){return S},get goalState(){return goalState},get movesLeft(){return movesLeft},set movesLeft(v){movesLeft=v}};
 
 /* ---- tray deadlock fix: plant / sell a single item; auto-plant when full ---- */
 function plantItem(i){const t=S.tray[i];if(t<0)return;S.garden.push({t:Math.max(1,t),x:.08+Math.random()*.84,y:.58+Math.random()*.38});if(S.garden.length>40)S.garden.sort((a,b)=>b.t-a.t).length=40;S.tray[i]=-1;try{renderGarden();}catch(e){}}
-function sellVal(t){return Math.max(2,(t+1)*3);}
+function sellVal(t){return (t+1)*15;}
 function autoPlant(){let lo=-1;S.tray.forEach((t,i)=>{if(t>=0&&(lo<0||t<S.tray[lo]))lo=i;});if(lo<0)return -1;
  const t=S.tray[lo];plantItem(lo);try{floatText(TIERNAME[t]+' 種到花園了！',innerWidth/2,innerHeight*.5);}catch(e){}return lo;}
 function trayMenu(i){const t=S.tray[i];if(t<0)return;const v=sellVal(t);const wasBusy=busy;
  modal(`<h2><img src="a/t${t}.png" style="height:1.6em;vertical-align:middle"> ${TIERNAME[t]}</h2><p>${t<5?'再找一個一樣的「'+TIERNAME[t]+'」就能合成。<br>':''}托盤卡住了嗎？可以：</p>
  <div class="row"><button class="big green" id="tPlant">🌷 種到花園</button></div>
- <div class="row"><button class="big glow" id="tSell">收成換 ⚡能量 +${v}</button></div>
+ <div class="row"><button class="big glow" id="tSell">收成換 🪙 +${v}</button></div>
  <div class="row"><button class="big alt" id="tKeep">留著</button></div>`);
  const close=()=>{show(null);busy=wasBusy;renderTray();save();if(typeof updMeter==='function')updMeter();};
  $('#tPlant').onclick=()=>{plantItem(i);sfx('seed');close();say('種好了！托盤空出一格');addEnergy(0);};
- $('#tSell').onclick=()=>{S.tray[i]=-1;S.energy+=v;sfx('seed');close();say('收成了！');addEnergy(0);};
+ $('#tSell').onclick=()=>{S.tray[i]=-1;S.coins=(S.coins||0)+v;sfx('coin');close();say('收成了！');addEnergy(0);};
  $('#tKeep').onclick=close;}

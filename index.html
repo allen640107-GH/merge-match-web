@@ -24,6 +24,7 @@
     <button class="iconBtn" id="btnMenu" aria-label="選單">⚙️</button>
   </div>
   <div id="goals"></div>
+  <div id="boost"></div>
   <div id="boardWrap"><canvas id="board"></canvas></div>
   <div id="tray">
     <div id="meter"><div id="meterFill"></div><span id="meterTxt">能量</span></div>
@@ -48,13 +49,15 @@
 
   <div id="home" class="screen">
     <div class="amb"><div class="ray"></div><div class="ray r2"></div><div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div><div class="bfly"><span>🦋</span></div><div class="bfly b2"><span>🦋</span></div><div class="bfly b3"><span>🐦</span></div><i class="spk" style="left:12%;top:40%"></i><i class="spk" style="left:70%;top:30%;animation-delay:-1s"></i><i class="spk" style="left:40%;top:62%;animation-delay:-2s"></i><i class="spk" style="left:85%;top:55%;animation-delay:-1.5s"></i></div>
-    <div class="homeTop"><div class="pill" id="starPill">⭐ 0</div><button class="iconBtn" id="btnSet2">⚙️</button></div>
+    <div class="homeTop"><div class="pill" id="starPill">⭐ 0</div><div class="pill" id="coinPill">🪙 0</div><button class="iconBtn" id="btnSet2">⚙️</button></div>
     <div class="homeMid">
       <img id="homeChar" class="breathe">
       <div id="homeName"></div>
+      <div id="homeCh"></div>
     </div>
     <div class="homeBtns">
       <button class="big glow" id="btnPlay">開始 第 1 關</button>
+      <div class="row2"><button class="big alt" id="btnMap">🗺️ 關卡地圖</button><button class="big alt" id="btnFarm">🐔 開心農場</button></div>
       <button class="big alt" id="btnGarden">🌷 逛逛花園</button>
     </div>
   </div>
@@ -67,8 +70,43 @@
     <button class="big glow" id="vidBtn">繼續 ▶</button>
   </div>
 
+  <div id="map" class="screen">
+    <div class="mapTop"><button class="big alt sm" id="mapBack">← 回去</button><div class="mt">關卡地圖</div><div class="pill" id="mapStars"></div></div>
+    <div id="mapList"></div>
+  </div>
+
+  <div id="farm" class="screen">
+    <div class="fbg"></div>
+    <div class="fwrap">
+      <div class="ftop"><button class="big alt sm" id="fBack">← 回去</button><div class="pill" id="fCoins">🪙 0</div><button class="big glow sm" id="fShop">🛒 商店</button></div>
+      <div class="fhead"><img id="fChar"><div id="fSay"></div></div>
+      <div class="fsec"><div class="ftitle">🐔 動物（點一下收集）</div><div id="fAnimals"></div></div>
+      <div class="fsec"><div class="ftitle">🌱 農田（作物離線也會長）</div><div id="fPlots"></div></div>
+      <div class="fsec"><div id="fDecos"></div></div>
+      <div class="fsec"><div class="ftitle">倉庫・道具</div><div id="fInv"></div></div>
+    </div>
+  </div>
+
+  <div id="ending" class="screen">
+    <div class="endBg"></div>
+    <div class="endBox">
+      <div class="l1">🎉 恭喜通關！</div>
+      <div class="endChars"><img src="a/ch_fox.png"><img src="a/ch_panda.png"><img src="a/ch_bunny.png"></div>
+      <p>五個花園都恢復美麗了！<br>謝謝你一路的陪伴 💖</p>
+      <div class="pill" id="endStars"></div>
+      <div class="row"><button class="big glow" id="endFarm">🐔 去農場</button><button class="big alt" id="endMap">🗺️ 重玩關卡</button></div>
+      <div class="row"><button class="big alt" id="endHome">回首頁</button></div>
+    </div>
+  </div>
+
   <div id="modal" class="screen"><div class="panel" id="panel"></div></div>
 </div>
+<script src="levels.js"></script>
 <script src="game.js"></script>
+<script src="farm.js"></script>
+<script>
+$("#mapBack").onclick=()=>goHome();$("#fBack").onclick=()=>goHome();$("#fShop").onclick=()=>openShop();
+$("#endFarm").onclick=()=>openFarm();$("#endMap").onclick=()=>openMap();$("#endHome").onclick=()=>goHome();
+</script>
 </body>
 </html>
