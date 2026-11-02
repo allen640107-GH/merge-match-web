@@ -145,9 +145,9 @@ function rc(){return (Math.random()*nColors)|0;}
 function mk(c,r,col,s=0){return{id:++gid,c,s,x:col,y:r,sc:1,a:1,rot:0};}
 function levelDef(n){
  const colors=n<=2?5:6;const moves=Math.max(20,26-Math.floor(n/4));const g=[];
- g.push({k:'gem',c:(n*2+1)%6,n:n<=10?6+n*3:Math.min(12+n*3,40)});
+ g.push({k:'gem',c:((n*2+1)%6)%colors,n:n<=10?6+n*3:Math.min(12+n*3,40)});
  if(n>=2)g.push({k:'tier',t:Math.min(1+Math.floor((n-1)/3),3),n:1});
- if(n>=5)g.push({k:'gem',c:(n*5+3)%6,n:n<=10?4+n*2:Math.min(10+n*2,35)});
+ if(n>=5){let c2=((n*5+3)%6)%colors;if(c2===g[0].c)c2=(c2+1)%colors;g.push({k:'gem',c:c2,n:n<=10?4+n*2:Math.min(10+n*2,35)});}
  return{n,colors,moves,goals:g};
 }
 function newBoard(){
