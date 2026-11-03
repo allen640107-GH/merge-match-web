@@ -345,3 +345,5 @@ body.shk #app,body.shk #boardWrap{animation:bshk .4s linear}
 #mascotImg.excite{animation:excite .4s ease-in-out 4}
 @keyframes excite{0%,100%{transform:translateY(0) rotate(0) scale(1)}25%{transform:translateY(-28%) rotate(-12deg) scale(1.15)}75%{transform:translateY(-14%) rotate(12deg) scale(1.1)}}
 @media (prefers-reduced-motion:reduce){.combo2{animation-duration:1.6s}.cflash,.cring,.cshard{display:none}}
+
+.ci{display:inline-block;width:1.1em;height:1.1em;vertical-align:-.18em;margin:0 .12em;object-fit:contain}

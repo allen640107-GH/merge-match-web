@@ -31,13 +31,13 @@ function floatAt(t,el){const r=el.getBoundingClientRect();floatText(t,r.left+r.w
 /* ---------- farm screen ---------- */
 let farmSig='',farmIv=null;
 function openFarm(){gardenMode=false;level=null;setGameVisible(false);show('farm');renderFarm(true);clearInterval(farmIv);farmIv=setInterval(()=>{if($('#farm').classList.contains('show'))renderFarm();},1000);
- if(!S.farmTut){S.farmTut=true;save();setTimeout(()=>farmSay('歡迎來到開心農場！點空地種菜，熟了點一下收成換金幣🪙'),500);}}
-function farmSay(t){const b=$('#fSay');b.textContent=t;b.classList.add('show');clearTimeout(farmSay.t);farmSay.t=setTimeout(()=>b.classList.remove('show'),3200);}
+ if(!S.farmTut){S.farmTut=true;save();setTimeout(()=>farmSay('歡迎來到開心農場！點空地種菜，熟了點一下收成換金幣<img class="ci" src="a/coin.png" alt="">'),500);}}
+function farmSay(t){const b=$('#fSay');b.innerHTML=t;b.classList.add('show');clearTimeout(farmSay.t);farmSay.t=setTimeout(()=>b.classList.remove('show'),3200);}
 function sig(){return S.farm.plots.map(p=>p?p.k+(plotLeft(p)<=0?'R':'g'):'_').join()+'|'+S.farm.animals.map(a=>a.k+(animLeft(a)<=0?'R':'g')).join()+'|'+S.farm.decos.join()+'|'+S.coins+JSON.stringify(S.inv)+JSON.stringify(S.seeds)+JSON.stringify(S.boost);}
 function renderFarm(force){
  const g=sig();
  if(!force&&g===farmSig){document.querySelectorAll('#farm [data-end]').forEach(e=>e.textContent=fmt(+e.dataset.end-nowS()));return;}
- farmSig=g;$('#fCoins').textContent='🪙 '+S.coins;
+ farmSig=g;$('#fCoins').innerHTML='<img class="ci" src="a/coin.png" alt="">'+S.coins;
  $('#fChar').src=CHARS[S.char||'fox'].img;
  $('#fAnimals').innerHTML=S.farm.animals.map((a,i)=>{const A=ANIMALS[a.k],P=PROD[A.prod],L=animLeft(a);
   return `<div class="fa ${L<=0?'ready':''}" data-act="animal" data-i="${i}"><img class="an" src="a/${A.img}.png">${L<=0?`<img class="prod" src="a/${P.img}.png">`:`<div class="cd"><img src="a/${P.img}.png"><span data-end="${a.t0+A.t*1000}">${fmt(L)}</span></div>`}<div class="nm">${A.name}</div></div>`;}).join('')+
@@ -46,7 +46,7 @@ function renderFarm(force){
   const C=CROPS[p.k],L=plotLeft(p);
   return L<=0?`<div class="fp ready" data-act="plot" data-i="${i}"><img class="crop" src="a/${C.img}.png"><span class="lab">收成！</span></div>`
    :`<div class="fp grow" data-act="plot" data-i="${i}"><img class="sp" src="a/sprout.png"><span class="lab" data-end="${p.t0+C.t*1000}">${fmt(L)}</span><span class="cn">${C.name}</span></div>`;}).join('')+
-  (S.farm.plots.length<MAXPLOT?`<div class="fp buy" data-act="land"><span>＋擴地<br>🪙${landCost()}</span></div>`:'');
+  (S.farm.plots.length<MAXPLOT?`<div class="fp buy" data-act="land"><span>＋擴地<br><img class="ci" src="a/coin.png" alt="">${landCost()}</span></div>`:'');
  $('#fDecos').innerHTML=S.farm.decos.length?S.farm.decos.map((k,i)=>`<img data-act="deco" data-i="${i}" src="a/${DECOS[k].img}.png">`).join(''):'<div class="hint">在商店買裝飾，農場會更漂亮！</div>';
  $('#fInv').innerHTML=Object.keys(PROD).map(k=>`<span><img src="a/${PROD[k].img}.png">${S.inv[k]||0}</span>`).join('')+
   Object.keys(BOOSTS).map(k=>`<span class="bo"><img src="a/${BOOSTS[k].img}.png">${k==='moves'?'+5':''}×${S.boost[k]||0}</span>`).join('');
@@ -56,7 +56,7 @@ document.addEventListener('pointerup',e=>{const t=e.target.closest('#farm [data-
 function farmAct(act,i,el){
  if(act==='plot'){const p=S.farm.plots[i];
   if(!p)return seedPicker(i);
-  if(plotLeft(p)<=0){const C=CROPS[p.k];S.coins+=C.gain;S.farm.plots[i]=null;save();sfx('coin');floatAt('+'+C.gain+'🪙',el);const r=el.getBoundingClientRect();oburst(r.left+r.width/2,r.top+r.height/2,'#ffd54a',22);renderFarm(true);return;}
+  if(plotLeft(p)<=0){const C=CROPS[p.k];S.coins+=C.gain;S.farm.plots[i]=null;save();sfx('coin');floatAt('+'+C.gain+'<img class="ci" src="a/coin.png" alt="">',el);const r=el.getBoundingClientRect();oburst(r.left+r.width/2,r.top+r.height/2,'#ffd54a',22);renderFarm(true);return;}
   sfx('tap');farmSay(CROPS[p.k].name+'還要 '+fmt(plotLeft(p))+' 才會熟喔～關掉遊戲也會繼續長！');return;}
  if(act==='animal'){const a=S.farm.animals[i],A=ANIMALS[a.k];sfx(A.snd);
   if(animLeft(a)<=0){S.inv[A.prod]=(S.inv[A.prod]||0)+1;a.t0=nowS();save();floatAt('+1 '+PROD[A.prod].name,el);const r=el.getBoundingClientRect();oburst(r.left+r.width/2,r.top,'#fff59d',16);renderFarm(true);}
@@ -67,7 +67,7 @@ function farmAct(act,i,el){
 }
 function seedPicker(i){
  const rows=Object.entries(CROPS).map(([k,C])=>{const lock=C.lv>maxLv();const have=S.seeds[k]||0;
-  return `<button class="shopRow ${lock?'lock':''}" data-k="${k}"><img src="a/${C.img}.png"><span class="t"><b>${C.name}</b><small>${fmt(C.t*1000)} 成熟・賣 🪙${C.gain}</small></span><span class="p">${lock?'🔒 第'+C.lv+'關':have?'種子 ×'+have:'🪙'+C.cost}</span></button>`;}).join('');
+  return `<button class="shopRow ${lock?'lock':''}" data-k="${k}"><img src="a/${C.img}.png"><span class="t"><b>${C.name}</b><small>${fmt(C.t*1000)} 成熟・賣 <img class="ci" src="a/coin.png" alt="">${C.gain}</small></span><span class="p">${lock?'🔒 第'+C.lv+'關':have?'種子 ×'+have:'<img class="ci" src="a/coin.png" alt="">'+C.cost}</span></button>`;}).join('');
  modal(`<h2>種什麼呢？</h2><div class="shopList">${rows}</div><div class="row"><button class="big alt" id="spX">關閉</button></div>`);
  $('#spX').onclick=()=>show('farm');
  document.querySelectorAll('.shopRow').forEach(b=>b.onclick=()=>{const k=b.dataset.k,C=CROPS[k];if(C.lv>maxLv()){sfx('nope');return;}
@@ -76,12 +76,12 @@ function seedPicker(i){
 }
 function openShop(tab){
  const sec=(t,h)=>`<div class="lbl">${t}</div>${h}`;
- const seeds=Object.entries(CROPS).map(([k,C])=>{const lock=C.lv>maxLv();return `<button class="shopRow ${lock?'lock':''}" data-buy="seed" data-k="${k}"><img src="a/${C.img}.png"><span class="t"><b>${C.name}種子</b><small>有 ${S.seeds[k]||0} 包</small></span><span class="p">${lock?'🔒 第'+C.lv+'關':'🪙'+C.cost}</span></button>`;}).join('');
- const an=Object.entries(ANIMALS).map(([k,A])=>`<button class="shopRow" data-buy="animal" data-k="${k}"><img src="a/${A.img}.png"><span class="t"><b>${A.name}</b><small>每 ${fmt(A.t*1000)} 產${PROD[A.prod].name}</small></span><span class="p">🪙${A.cost}</span></button>`).join('');
- const de=Object.entries(DECOS).map(([k,D])=>{const own=S.farm.decos.includes(k);return `<button class="shopRow ${own?'lock':''}" data-buy="deco" data-k="${k}"><img src="a/${D.img}.png"><span class="t"><b>${D.name}</b><small>農場裝飾</small></span><span class="p">${own?'已擁有':'🪙'+D.cost}</span></button>`;}).join('');
- const land=S.farm.plots.length<MAXPLOT?`<button class="shopRow" data-buy="land"><img src="a/plot.png"><span class="t"><b>擴充農地</b><small>目前 ${S.farm.plots.length} / ${MAXPLOT} 塊</small></span><span class="p">🪙${landCost()}</span></button>`:'';
+ const seeds=Object.entries(CROPS).map(([k,C])=>{const lock=C.lv>maxLv();return `<button class="shopRow ${lock?'lock':''}" data-buy="seed" data-k="${k}"><img src="a/${C.img}.png"><span class="t"><b>${C.name}種子</b><small>有 ${S.seeds[k]||0} 包</small></span><span class="p">${lock?'🔒 第'+C.lv+'關':'<img class="ci" src="a/coin.png" alt="">'+C.cost}</span></button>`;}).join('');
+ const an=Object.entries(ANIMALS).map(([k,A])=>`<button class="shopRow" data-buy="animal" data-k="${k}"><img src="a/${A.img}.png"><span class="t"><b>${A.name}</b><small>每 ${fmt(A.t*1000)} 產${PROD[A.prod].name}</small></span><span class="p"><img class="ci" src="a/coin.png" alt="">${A.cost}</span></button>`).join('');
+ const de=Object.entries(DECOS).map(([k,D])=>{const own=S.farm.decos.includes(k);return `<button class="shopRow ${own?'lock':''}" data-buy="deco" data-k="${k}"><img src="a/${D.img}.png"><span class="t"><b>${D.name}</b><small>農場裝飾</small></span><span class="p">${own?'已擁有':'<img class="ci" src="a/coin.png" alt="">'+D.cost}</span></button>`;}).join('');
+ const land=S.farm.plots.length<MAXPLOT?`<button class="shopRow" data-buy="land"><img src="a/plot.png"><span class="t"><b>擴充農地</b><small>目前 ${S.farm.plots.length} / ${MAXPLOT} 塊</small></span><span class="p"><img class="ci" src="a/coin.png" alt="">${landCost()}</span></button>`:'';
  const ex=Object.entries(BOOSTS).map(([k,B])=>{const [pk,pn]=Object.entries(B.need)[0];return `<button class="shopRow" data-buy="boost" data-k="${k}"><img src="a/${B.img}.png"><span class="t"><b>${B.name}</b><small>${B.desc}・有 ${S.boost[k]||0}</small></span><span class="p"><img class="pi" src="a/${PROD[pk].img}.png">×${pn}<br><small>有 ${S.inv[pk]||0}</small></span></button>`;}).join('');
- modal(`<h2>🛒 農場商店</h2><div class="pill coinP">🪙 ${S.coins}</div><div class="shopList" id="shopList">${sec('用農產品換道具',ex)}${sec('種子',seeds)}${sec('動物',an)}${sec('裝飾',de)}${sec('土地',land)}</div><div class="row"><button class="big glow" id="shX">回農場</button></div>`);
+ modal(`<h2>🛒 農場商店</h2><div class="pill coinP"><img class="ci" src="a/coin.png" alt="">${S.coins}</div><div class="shopList" id="shopList">${sec('用農產品換道具',ex)}${sec('種子',seeds)}${sec('動物',an)}${sec('裝飾',de)}${sec('土地',land)}</div><div class="row"><button class="big glow" id="shX">回農場</button></div>`);
  $('#shX').onclick=()=>{show('farm');renderFarm(true);};
  if(tab==='animal'){const e=document.querySelector('[data-buy=animal]');e&&e.scrollIntoView({block:'center'});}
  if(openShop.sc!=null&&!tab){$('#shopList').scrollTop=openShop.sc;}
@@ -102,7 +102,7 @@ function checkDaily(force){
  if(!$('#home').classList.contains('show')&&!force)return;
  const today=new Date().toDateString();if(S.daily.last===today)return;
  const y=new Date(Date.now()-864e5).toDateString();const day=S.daily.last===y?(S.daily.streak%7)+1:1;
- const desc=r=>[r.coins?'🪙'+r.coins:'',...Object.entries(r.seeds||{}).map(([k,n])=>`<img src="a/${CROPS[k].img}.png">×${n}`),...Object.entries(r.boost||{}).map(([k,n])=>`<img src="a/${BOOSTS[k].img}.png">×${n}`)].join(' ');
+ const desc=r=>[r.coins?'<img class="ci" src="a/coin.png" alt="">'+r.coins:'',...Object.entries(r.seeds||{}).map(([k,n])=>`<img src="a/${CROPS[k].img}.png">×${n}`),...Object.entries(r.boost||{}).map(([k,n])=>`<img src="a/${BOOSTS[k].img}.png">×${n}`)].join(' ');
  modal(`<h2>🎁 每日登入獎勵</h2><p>連續第 ${day} 天！</p><div class="daily">${DAILY.map((r,i)=>`<div class="dd ${i+1<day?'got':i+1===day?'now':''}"><b>第${i+1}天</b><div>${desc(r)}</div></div>`).join('')}</div><div class="row"><button class="big glow" id="dClaim">領取！</button></div>`);
  $('#dClaim').onclick=()=>{const r=DAILY[day-1];S.coins+=r.coins||0;for(const[k,n]of Object.entries(r.seeds||{}))S.seeds[k]=(S.seeds[k]||0)+n;for(const[k,n]of Object.entries(r.boost||{}))S.boost[k]=(S.boost[k]||0)+n;
   S.daily={last:today,streak:day};save();sfx('win');const pr=$('#panel').getBoundingClientRect();oburst(pr.left+pr.width/2,pr.top+pr.height/2,'#ffd54a',40);setTimeout(()=>goHome(),500);};
@@ -151,10 +151,10 @@ async function useBoostAt(r,c){const k=boostMode,g=grid[r][c];
 /* ---- v2.0.5: sell garden items, animals, decorations ---- */
 function sellMenu(img,name,info,v,onSell){const wasBusy=typeof busy!=='undefined'?busy:false;try{busy=true;}catch(e){}
  modal(`<h2><img src="${img}" style="height:1.6em;vertical-align:middle"> ${name}</h2>${info?'<p>'+info+'</p>':''}
- <div class="row"><button class="big glow" id="sSell">賣掉 🪙 +${v}</button></div>
+ <div class="row"><button class="big glow" id="sSell">賣掉 <img class="ci" src="a/coin.png" alt="">+${v}</button></div>
  <div class="row"><button class="big alt" id="sCancel">取消</button></div>`);
  const close=()=>{$('#modal').classList.remove('show');try{busy=wasBusy;}catch(e){}};
- $('#sSell').onclick=()=>{onSell();S.coins=(S.coins||0)+v;save();sfx('coin');close();floatText('+'+v+' 🪙',innerWidth/2,innerHeight*.45);};
+ $('#sSell').onclick=()=>{onSell();S.coins=(S.coins||0)+v;save();sfx('coin');close();floatText('+'+v+' <img class="ci" src="a/coin.png" alt="">',innerWidth/2,innerHeight*.45);};
  $('#sCancel').onclick=close;}
 function gardenMenu(d){const idx=S.garden.indexOf(d);if(idx<0||document.querySelector('#modal.show'))return;
  const g=(level&&typeof tierNeed==='function')?tierNeed():null;

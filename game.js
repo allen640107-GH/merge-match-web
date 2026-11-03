@@ -417,7 +417,7 @@ function burst(x,y,col,n){for(let i=0;i<n;i++){const a=Math.random()*6.283,v=(1+
 function sparkle(x,y){for(let i=0;i<14;i++){const a=i/14*6.283;parts.push({x,y,vx:Math.cos(a)*cs*.08,vy:Math.sin(a)*cs*.08,life:1,col:'#fff7b0',sz:cs*.06,star:true});}}
 function oburst(x,y,col,n){for(let i=0;i<n;i++){const a=Math.random()*6.283,v=1+Math.random()*4;oparts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1.5,life:1,col,sz:4+Math.random()*7,star:Math.random()<.5,g:.08});}}
 function ostar(x,y){for(let i=0;i<10;i++){const a=i/10*6.283;oparts.push({x,y,vx:Math.cos(a)*5,vy:Math.sin(a)*5,life:1.2,col:'#fff',sz:9,star:true,g:0});}}
-function floatText(t,x,y){const d=document.createElement('div');d.className='combo';d.textContent=t;d.style.left=x+'px';d.style.top=y+'px';d.style.fontSize='calc(34px*var(--fs))';$('#floaters').appendChild(d);setTimeout(()=>d.remove(),1300);}
+function floatText(t,x,y){const d=document.createElement('div');d.className='combo';d.innerHTML=t;d.style.left=x+'px';d.style.top=y+'px';d.style.fontSize='calc(34px*var(--fs))';$('#floaters').appendChild(d);setTimeout(()=>d.remove(),1300);}
 const COMBOW=['','','讚！','太棒了！','超級棒！','完美！','無敵！'];
 function comboText(c){const br=bw.getBoundingClientRect();const d=document.createElement('div');d.className='combo';d.textContent=(COMBOW[Math.min(c,6)])+' x'+c;d.style.left=(br.left+br.width/2)+'px';d.style.top=(br.top+br.height*.4)+'px';$('#floaters').appendChild(d);setTimeout(()=>d.remove(),1300);}
 function drawStar(c,x,y,r){c.beginPath();for(let i=0;i<8;i++){const a=i*Math.PI/4,rr=i%2?r*.35:r;c.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}c.closePath();c.fill();}
@@ -425,7 +425,7 @@ function drawStar(c,x,y,r){c.beginPath();for(let i=0;i<8;i++){const a=i*Math.PI/
 /* ---------- mascot ---------- */
 let bubbleT=null;
 let bubbleOn=false;
-function say(t){const b=$('#bubble');if(b.parentNode!==document.body)document.body.appendChild(b);b.textContent=t;
+function say(t){const b=$('#bubble');if(b.parentNode!==document.body)document.body.appendChild(b);b.innerHTML=t;
  const z=tipZone&&!wide&&!gardenMode&&level?tipZone:null;
  if(z){b.style.fontSize=z.f+'px';b.style.width=z.w+'px';b.style.maxWidth='';b.style.left=z.x+'px';bubbleOn=true;$('#mergeTip').style.display='none';
   b.style.top='0px';b.classList.add('show');b.style.padding='4px 10px';let f=z.f;while(b.offsetHeight>z.h&&f>16){f-=1;b.style.fontSize=f+'px';}b.style.top=(z.y+Math.max(0,(z.h-b.offsetHeight)/2))+'px';}
@@ -536,7 +536,7 @@ function buildSelect(){
 function totalStars(){return Object.values(S.stars).reduce((a,b)=>a+b,0);}
 function setSceneBg(ch){$('#sceneBg').style.backgroundImage='url('+CHAPTERS[ch].bg+')';}
 function goHome(){level=null;gardenMode=false;boostMode=null;$('#gardenBar').classList.add('hidden');show('home');
- $('#btnPlay').textContent=S.level>NLEV?'🗺️ 重玩關卡':'開始 第 '+S.level+' 關';$('#starPill').textContent='⭐ '+totalStars();$('#coinPill').textContent='🪙 '+S.coins;
+ $('#btnPlay').textContent=S.level>NLEV?'🗺️ 重玩關卡':'開始 第 '+S.level+' 關';$('#starPill').textContent='⭐ '+totalStars();$('#coinPill').innerHTML='<img class="ci" src="a/coin.png" alt="">'+S.coins;
  $('#homeCh').textContent=S.level>NLEV?'全部通關！🎉':'第 '+(chapterOf(S.level)+1)+' 章・'+CHAPTERS[chapterOf(S.level)].name;
  setSceneBg(chapterOf(Math.min(S.level,NLEV)));$('#home').style.backgroundImage='url('+CHAPTERS[chapterOf(Math.min(S.level,NLEV))].bg+')';setChar();$('#btnFarm').classList.toggle('badge',farmReady()>0);
  setTimeout(checkDaily,400);}
@@ -573,13 +573,13 @@ async function win(){
  if(n===NLEV){await playVideo('end','全部完成！花園永遠美麗！');S.ended=true;save();showEnding();return;}
  await playVideo(chEnd?'chap':'win',chEnd?'第 '+(level.ch+1)+' 章 完成！':'過關！');
  const st=[1,2,3].map(i=>`<span class="${i<=stars?'':'off'}" style="animation-delay:${i*.2}s">⭐</span>`).join('');
- modal(`<h2>第 ${n} 關 完成！</h2><div class="stars">${st}</div><div class="reward"><span>🪙 +${coins}</span><span><img src="a/${CROPS[sk].img}.png">${CROPS[sk].name}種子 ×${sn}</span></div>${chEnd?`<p class="unlock">🎉 新章節解鎖：${CHAPTERS[level.ch+1].name}</p>`:''}<div class="row"><button class="big glow" id="mNext">下一關 ▶</button></div><div class="row"><button class="big alt" id="mMap">🗺️ 地圖</button><button class="big alt" id="mFarm">🐔 農場</button><button class="big alt" id="mHome">回首頁</button></div>`);
+ modal(`<h2>第 ${n} 關 完成！</h2><div class="stars">${st}</div><div class="reward"><span><img class="ci" src="a/coin.png" alt="">+${coins}</span><span><img src="a/${CROPS[sk].img}.png">${CROPS[sk].name}種子 ×${sn}</span></div>${chEnd?`<p class="unlock">🎉 新章節解鎖：${CHAPTERS[level.ch+1].name}</p>`:''}<div class="row"><button class="big glow" id="mNext">下一關 ▶</button></div><div class="row"><button class="big alt" id="mMap">🗺️ 地圖</button><button class="big alt" id="mFarm">🐔 農場</button><button class="big alt" id="mHome">回首頁</button></div>`);
  const pr=$('#panel').getBoundingClientRect();setTimeout(()=>{for(let i=0;i<3;i++)setTimeout(()=>{oburst(pr.left+pr.width/2,pr.top+80,'#ffd54a',30);sfx('coin');},i*200);},100);
  $('#mNext').onclick=()=>startLevel(n+1);$('#mHome').onclick=()=>{setGameVisible(false);goHome();};
  $('#mMap').onclick=()=>{setGameVisible(false);level=null;openMap();};$('#mFarm').onclick=()=>{setGameVisible(false);level=null;openFarm();};
 }
 function playVideo(kind,text,skippable){
- return new Promise(res=>{const v=$('#vid');v.src='a/'+kind+'_'+(S.char||'fox')+'.mp4';v.currentTime=0;$('#vidText').textContent=text;show('video');
+ return new Promise(res=>{const v=$('#vid');v.src='a/'+kind+'_'+(S.char||'fox')+'.mp4';v.currentTime=0;$('#vidText').innerHTML=text;show('video');
   const btn=$('#vidBtn');btn.style.visibility='hidden';let done=false;const fin=()=>{if(done)return;done=true;v.pause();show(null);res();};
   setTimeout(()=>btn.style.visibility='visible',900);btn.onclick=fin;v.onended=()=>{btn.classList.add('glow');};
   v.play().catch(()=>{btn.style.visibility='visible';});
@@ -647,7 +647,7 @@ function autoPlant(){let lo=-1;S.tray.forEach((t,i)=>{if(t>=0&&(lo<0||t<S.tray[l
 function trayMenu(i){const t=S.tray[i];if(t<0)return;const v=sellVal(t);const wasBusy=busy;
  modal(`<h2><img src="a/t${t}.png" style="height:1.6em;vertical-align:middle"> ${TIERNAME[t]}</h2><p>${t<5?'再找一個一樣的「'+TIERNAME[t]+'」就能合成。<br>':''}托盤卡住了嗎？可以：</p>
  <div class="row"><button class="big green" id="tPlant">🌷 種到花園</button></div>
- <div class="row"><button class="big glow" id="tSell">收成換 🪙 +${v}</button></div>
+ <div class="row"><button class="big glow" id="tSell">收成換 <img class="ci" src="a/coin.png" alt="">+${v}</button></div>
  <div class="row"><button class="big alt" id="tKeep">留著</button></div>`);
  const close=()=>{show(null);busy=wasBusy;renderTray();save();if(typeof updMeter==='function')updMeter();};
  $('#tPlant').onclick=()=>{plantItem(i);sfx('seed');close();say('種好了！托盤空出一格');addEnergy(0);};
@@ -660,7 +660,7 @@ function chapterStory(ch,coins){return new Promise(res=>{
  const vsrc='a/'+(ch%2?'chap_':'cheer_')+k+'.mp4';
  let d=$('#story');if(!d){d=document.createElement('div');d.id='story';document.body.appendChild(d);}
  d.innerHTML=`<div class="sp sp1"><video src="${vsrc}" muted playsinline webkit-playsinline autoplay preload="auto"></video>
-  <div class="sLine"><b>第 ${ch+1} 章 完成！</b><span>${st.cheer}</span>${coins?`<i>🪙 +${coins}</i>`:''}</div></div>
+  <div class="sLine"><b>第 ${ch+1} 章 完成！</b><span>${st.cheer}</span>${coins?`<i><img class="ci" src="a/coin.png" alt="">+${coins}</i>`:''}</div></div>
   <div class="sp sp2"><div class="sBg" style="background-image:url(${nx?nx.bg:CHAPTERS[ch].bg})"></div><div class="sPet"></div>
   <img class="sChar" src="a/ch_${k}.png"><div class="sTxt"><b>${nx?'第 '+(ch+2)+' 章・'+nx.name:'最終章 完結'}</b><span>${st.next}</span></div></div>
   <button id="sSkip">跳過 ⏭</button><button id="sGo" class="big glow">繼續 ▶</button>`;
