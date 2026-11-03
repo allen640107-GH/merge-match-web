@@ -105,6 +105,7 @@ const ctx=cv.getContext('2d');
 const ofx=document.createElement('canvas');ofx.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:25';app.appendChild(ofx);
 const octx=ofx.getContext('2d');
 let W,H,B,cs,DPR,wide=false,gardenMode=false;
+let tipZone=null;function tipFont(){return Math.min(21*S.fs,Math.max(18,innerWidth*.062));}
 function place(el,x,y,w,h){el.style.left=x+'px';el.style.top=y+'px';if(w!=null)el.style.width=w+'px';if(h!=null)el.style.height=h+'px';}
 function safe(){const p=document.createElement('div');p.style.cssText='position:fixed;top:env(safe-area-inset-top);bottom:env(safe-area-inset-bottom)';document.body.appendChild(p);const r=p.getBoundingClientRect();p.remove();return{t:r.top,b:innerHeight-r.bottom};}
 function layout(){
@@ -115,23 +116,35 @@ function layout(){
  if(gardenMode){place(scene,0,0,W,H);scene.style.borderRadius='0';
   const mw=Math.min(W,H)*.32;place(mascot,m,H-mw*1.25-90*fs,mw);renderGarden();return;}
  scene.style.borderRadius='';
+ tipZone=null;
  if(!wide){
   const mascotW=Math.min(W*.24,140*fs);const trayW=W-mascotW-2*m;
   const slot=(trayW-5*5)/NSLOT;const trayH=30*fs+6+slot;
-  const bh=50*fs;const minScene=sa.t+hudH+goalH+bh+26;
-  B=Math.min(W-2*m,H-minScene-trayH-3*m-sa.b);
-  const sceneH=Math.min(H-B-trayH-3*m-sa.b, H*.42);
-  const extra=H-sceneH-B-trayH-3*m-sa.b;
-  place(scene,0,0,W,sceneH);
+  goalsEl.style.height='auto';goalsEl.style.width=(W-2*m)+'px';const gH=Math.max(goalH,goalsEl.scrollHeight||0);
+  const tipF=tipFont();const tipH=Math.ceil(tipF*1.3*3+26);
+  const bh=50*fs,bwid=62*fs;
+  const top0=sa.t+m+hudH+6+gH+6;
+  const bottomRes=tipH+trayH+3*m+sa.b;
+  // board with boost row above it
+  let Brow=Math.min(W-2*m,H-top0-bh-6-bottomRes);
+  // board with boost as a side column (better on short/narrow screens)
+  let Bcol=Math.min(W-3*m-bwid,H-top0-bottomRes);
+  const side=Bcol>Brow+4;B=Math.max(120,side?Bcol:Brow);
+  const used=top0+(side?0:bh+6)+B+bottomRes;const extra=Math.max(0,H-used);
+  const sceneH=top0+(side?0:bh+6)+extra*.3-4;
+  place(scene,0,0,W,Math.max(sceneH,top0));
   place(hud,m,sa.t+m,W-2*m,hudH);
-  place(goalsEl,m,sa.t+m+hudH+6,W-2*m,goalH);
-  place(boostEl,m,sceneH-bh-6,W-2*m,bh);
-  const by=sceneH+m+extra*.3;
-  place(bw,(W-B)/2,by,B,B);
-  place(tray,m,by+B+m,trayW);
+  place(goalsEl,m,sa.t+m+hudH+6,W-2*m,gH);
+  const by=top0+(side?0:bh+6)+extra*.3;
+  if(side){const tot=B+m+bwid,x0=(W-tot)/2;place(bw,x0+bwid+m,by,B,B);place(boostEl,x0,by,bwid,B);boostEl.style.flexDirection='column';boostEl.style.justifyContent='center';}
+  else{place(bw,(W-B)/2,by,B,B);place(boostEl,m,top0,W-2*m,bh);boostEl.style.flexDirection='';boostEl.style.justifyContent='';}
+  tipZone={x:m,y:by+B+m*.5,w:W-2*m,h:tipH,f:tipF};
+  const ty=by+B+m+tipH+m*.5;
+  place(tray,m,ty,trayW);
   $('#slots').style.gridTemplateColumns='repeat(6,1fr)';
-  place(mascot,W-mascotW-m*.5,by+B+m+trayH-mascotW*1.05,mascotW);
+  place(mascot,W-mascotW-m*.5,ty+trayH-mascotW*1.05,mascotW);
  }else{
+  boostEl.style.flexDirection='';boostEl.style.justifyContent='';goalsEl.style.height='';
   B=Math.min(H-2*m-sa.t-sa.b,W*.6);const LW=W-B-3*m;
   place(bw,W-B-m,(H-B)/2,B,B);
   place(scene,0,0,LW+1.5*m,H);
@@ -301,8 +314,9 @@ function countGem(c){goalState.forEach(g=>{if(g.k==='gem'&&g.c===c&&g.left>0)g.l
 function countTier(t){goalState.forEach(g=>{if(g.k==='tier'&&g.t===t&&g.left>0)g.left--;});updGoals();}
 function countObs(k){goalState.forEach(g=>{if(g.k===k&&g.left>0)g.left--;});}
 function goalsDone(){return goalState.every(g=>g.left<=0);}
-function updGoals(){
+let _gH=0;function updGoals(){
  const GL={gem:'消除',ice:'敲冰',crate:'開箱',vine:'解藤',acorn:'收集'};goalsEl.innerHTML=goalState.map(g=>g.k==='tier'?`<div class="goal tier ${g.left<=0?'done':''}"><img src="a/t${g.t}.png"><div class="gt"><b>合成 ${TIERNAME[g.t]} ×${Math.max(0,g.left)}${g.left<=0?' ✔':''}</b><small>點托盤裡兩個${TIERNAME[g.t-1]}</small></div></div>`:`<div class="goal ${g.left<=0?'done':''}"><small class="gl">${GL[g.k]}</small><img src="a/${g.k==='gem'?'g'+g.c:g.k}.png"><span>${g.left<=0?'✔':g.left}</span></div>`).join('');
+ if(!wide&&!gardenMode){const h=goalsEl.scrollHeight;if(Math.abs(h-_gH)>2){_gH=h;layout();}}
 }
 function updHud(){$('#moves').textContent=movesLeft;$('#lvPill').textContent=(level.ch+1)+'-'+(((level.n-1)%10)+1);updBoost();}
 function addEnergy(n){
@@ -552,6 +566,8 @@ function updFinger(){const f=$('#finger'),tip=$('#mergeTip');if(!f)return;const 
  const sl=$('#slots').children;if(!sl[p[1]])return;const a=sl[p[0]].getBoundingClientRect(),b=sl[p[1]].getBoundingClientRect();
  f.style.setProperty('--ax',(a.left+a.width*.35)+'px');f.style.setProperty('--ay',(a.top+a.height*.45)+'px');f.style.setProperty('--bx',(b.left+b.width*.35)+'px');f.style.setProperty('--by',(b.top+b.height*.45)+'px');f.style.display='block';
  const t=S.tray[p[0]];tip.innerHTML='👆 點一下發光的'+TIERNAME[t]+'<br>兩個一樣就會合成「'+TIERNAME[t+1]+'」！';tip.style.display='block';
+ if(tipZone){const z=tipZone;tip.style.fontSize=z.f+'px';tip.style.padding='6px 10px';tip.style.width=z.w+'px';tip.style.left=z.x+'px';tip.style.maxHeight=z.h+'px';tip.style.top=(z.y+Math.max(0,(z.h-tip.offsetHeight)/2))+'px';return;}
+ tip.style.fontSize='';tip.style.padding='';tip.style.maxHeight='';
  const tw=Math.min(innerWidth-20,420);tip.style.width=tw+'px';tip.style.left=Math.max(10,Math.min(innerWidth-tw-10,(a.left+b.right)/2-tw/2))+'px';tip.style.top=Math.max(10,a.top-tip.offsetHeight-14)+'px';}
 setInterval(updFinger,250);
 window.__G={mergePair,get N(){return N},mk,get level(){return level},startLevel,openMap:()=>openMap(),openFarm:()=>openFarm(),farmTick:()=>renderFarm(),win:()=>win(),get ice(){return ice},get grid(){return grid},get busy(){return busy},findMove,trySwap,get S(){return S},get goalState(){return goalState},get movesLeft(){return movesLeft},set movesLeft(v){movesLeft=v}};
