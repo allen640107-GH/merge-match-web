@@ -441,9 +441,9 @@ const critters=[];
 function renderGarden(){
  const box=$('#sceneItems');box.innerHTML='';const sh=scene.clientHeight||1,sw=scene.clientWidth||1;
  const unit=Math.min(sh*.5,sw*.35)*(gardenMode?1.3:1);
- S.garden.slice().sort((a,b)=>a.y-b.y).forEach(d=>{const e=document.createElement('div');e.className='deco idle';const sz=unit*(.35+.12*d.t)*(.55+.6*d.y);
+ S.garden.filter(d=>!d.st).sort((a,b)=>a.y-b.y).forEach(d=>{const e=document.createElement('div');e.className='deco idle';e._d=d;const sz=unit*(.35+.12*d.t)*(.55+.6*d.y);
   e.style.width=sz+'px';e.style.left=(d.x*sw-sz/2)+'px';e.style.top=(d.y*sh-sz)+'px';e.style.animationDelay=(-Math.random()*4)+'s';e.innerHTML=`<img src="a/t${d.t}.png">`;
-  e.onpointerup=ev=>{initAudio();e.classList.remove('boing');void e.offsetWidth;e.classList.add('boing');sfx('chime',d.t);oburst(ev.clientX,ev.clientY,['#ffe066','#ff80ab','#80d8ff'][d.t%3],18);ostar(ev.clientX,ev.clientY);setTimeout(()=>e.classList.remove('boing'),650);if(typeof gardenMenu==='function')setTimeout(()=>gardenMenu(d),250);};
+  e.onpointerup=ev=>{if(window.decoEdit)return;initAudio();e.classList.remove('boing');void e.offsetWidth;e.classList.add('boing');sfx('chime',d.t);oburst(ev.clientX,ev.clientY,['#ffe066','#ff80ab','#80d8ff'][d.t%3],18);ostar(ev.clientX,ev.clientY);setTimeout(()=>e.classList.remove('boing'),650);if(typeof gardenMenu==='function')setTimeout(()=>gardenMenu(d),250);};
   box.appendChild(e);});
  critters.length=0;
  const mkC=(src,x,y,size,kind)=>{const e=document.createElement('div');e.className='critter'+(kind==='fly'?' flap':'');e.innerHTML=`<img src="${src}">`;e.style.width=size+'px';box.appendChild(e);
@@ -568,7 +568,7 @@ async function win(){
  const sk=seedReward(n);const sn=stars>=3?2:1;S.seeds[sk]=(S.seeds[sk]||0)+sn;
  if(n>=S.level)S.level=n+1;save();renderGarden();
  const chEnd=n%10===0;
- if(false&&chEnd){await chapterStory(level.ch,coins);if(n===NLEV){await playVideo('end','全部完成！花園永遠美麗！');S.ended=true;save();showEnding();return;}
+ if(chEnd){await chapterStory(level.ch,coins);if(n===NLEV){await playVideo('end','全部完成！花園永遠美麗！');S.ended=true;save();showEnding();return;}
   busy=false;return startLevel(n+1);}
  if(n===NLEV){await playVideo('end','全部完成！花園永遠美麗！');S.ended=true;save();showEnding();return;}
  await playVideo(chEnd?'chap':'win',chEnd?'第 '+(level.ch+1)+' 章 完成！':'過關！');
@@ -659,7 +659,7 @@ function chapterStory(ch,coins){return new Promise(res=>{
  const k=S.char||'fox',chr=CHARS[k]||{},st=STORY[ch]||STORY[0],nx=CHAPTERS[ch+1];
  const vsrc='a/'+(ch%2?'chap_':'cheer_')+k+'.mp4';
  let d=$('#story');if(!d){d=document.createElement('div');d.id='story';document.body.appendChild(d);}
- d.innerHTML=`<div class="sp sp1"><video src="${vsrc}" muted playsinline webkit-playsinline autoplay preload="auto"></video>
+ d.innerHTML=`<div class="sp sp1"><video src="${vsrc}" poster="a/cheerimg_${k}.jpg" muted playsinline webkit-playsinline autoplay preload="auto"></video>
   <div class="sLine"><b>第 ${ch+1} 章 完成！</b><span>${st.cheer}</span>${coins?`<i><img class="ci" src="a/coin.png" alt="">+${coins}</i>`:''}</div></div>
   <div class="sp sp2"><div class="sBg" style="background-image:url(${nx?nx.bg:CHAPTERS[ch].bg})"></div><div class="sPet"></div>
   <img class="sChar" src="a/ch_${k}.png"><div class="sTxt"><b>${nx?'第 '+(ch+2)+' 章・'+nx.name:'最終章 完結'}</b><span>${st.next}</span></div></div>

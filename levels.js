@@ -100,7 +100,6 @@ const LV=[
  [29,6,'x1','ice moss stone'],[29,6,'x2','vine moss stone'],[30,6,'x3','ice moss stone'],[30,6,'x4','moss stone crate'],[30,6,'x5','moss stone a:1'],
  [31,6,'x6','moss vine ice stone'],[31,6,'x7','moss ice stone'],[31,6,'x8','moss vine stone a:2'],[32,6,'x9','ice moss stone crate'],[33,6,'x10','moss vine stone ice t4:1']
 ];
-LV.length=50;CHAPTERS.length=5;/* v2.0.5: 50 levels; 51-100 next release */
 const NLEV=LV.length;
 function chapterOf(n){return Math.min(CHAPTERS.length-1,Math.floor((n-1)/10));}
 function levelDef(n){
@@ -118,7 +117,7 @@ function levelDef(n){
 const HARD={mul:2,tutMul:1.5,moves:1.4,tutMoves:1.3};
 /* balance tiers from bot simulation: 1=goals x1.5, 2=+half double layers & slower moss, 3=goals x1.25, single layers */
 const NEEDM={"13":46,"14":53,"15":49,"17":52,"19":46,"20":48,"22":85,"24":84,"25":51,"28":71,"29":40,"30":85,"33":49,"34":47,"36":59,"37":98,"38":47,"39":85,"40":170,"41":156,"42":168,"43":88,"44":130,"45":69,"46":194,"47":164,"48":161,"49":141,"50":172,"52":46,"58":111,"59":61,"60":161,"66":77,"67":61,"68":92,"70":233,"72":76,"73":105,"74":104,"75":255,"76":51,"77":80,"78":65,"80":98,"81":79,"82":168,"83":158,"84":58,"85":62,"86":131,"87":91,"88":85,"89":63,"90":88,"91":103,"92":62,"93":90,"94":86,"95":107,"96":96,"97":79,"98":290,"99":115,"100":142};/* bot-measured moves; capped at +50% */
-const BONUS={42:14,45:8,46:16,47:8,48:32,49:10,50:18,59:12,75:8,91:8,95:12,98:10,99:8};/* sim-verified extra moves */
+const BONUS={42:14,45:8,46:16,47:8,48:32,49:10,50:18,59:12,75:8,91:8,95:12,98:10,99:8,77:12,80:12,83:12,86:14,87:20,88:20,90:14,96:14,98:18,100:24};/* sim-verified extra moves */
 const TIER={"11":1,"13":1,"14":1,"15":1,"17":1,"19":1,"20":2,"22":2,"24":2,"25":2,"27":2,"28":1,"30":3,"32":1,"33":1,"34":2,"36":2,"37":2,"38":1,"39":3,"40":3,"41":3,"42":4,"43":3,"44":3,"45":2,"46":4,"47":3,"48":4,"49":3,"50":4,"52":1,"57":2,"58":3,"59":3,"60":4,"66":3,"67":2,"68":4,"70":3,"71":2,"72":2,"73":3,"74":2,"75":4,"76":1,"77":2,"78":2,"79":1,"80":1,"81":4,"82":3,"83":3,"84":1,"85":2,"86":2,"87":3,"88":1,"89":2,"90":3,"91":3,"92":2,"93":2,"95":4,"96":2,"97":3,"98":4,"99":3,"100":2};
 function hard(L){const tut=L.n<=2,tr=TIER[L.n]||0,m=tut?HARD.tutMul:tr>=4?1:tr>=3?1.25:tr>=1?1.5:HARD.mul;
  {const b=L.moves;L.moves=Math.round(b*(tut?HARD.tutMoves:tr?1.5:HARD.moves));if(!tut&&NEEDM[L.n])L.moves=Math.min(Math.round(b*1.5),Math.max(L.moves,NEEDM[L.n]));}L.moves+=BONUS[L.n]||0;L.tier=tr;if(tr>=2)L.mossSlow=true;

@@ -12,7 +12,7 @@ const ANIMALS={
  cow:{name:'乳牛',img:'a_cow',prod:'milk',t:1800,cost:300,snd:'moo'},
  sheep:{name:'綿羊',img:'a_sheep',prod:'wool',t:3600,cost:500,snd:'baa'}};
 const PROD={egg:{name:'雞蛋',img:'p_egg'},milk:{name:'牛奶',img:'p_milk'},wool:{name:'羊毛',img:'p_wool'}};
-const DECOS={scare:{name:'稻草人',img:'d_scare',cost:150},bench:{name:'木長椅',img:'d_bench',cost:200},lamp:{name:'小路燈',img:'d_lamp',cost:250},cart:{name:'花車',img:'d_cart',cost:300}};
+const DECOS={scare:{name:'稻草人',img:'d_scare',cost:150},bench:{name:'木長椅',img:'d_bench',cost:200},lamp:{name:'小路燈',img:'d_lamp',cost:250},cart:{name:'花車',img:'d_cart',cost:300},mail:{name:'郵筒',img:'d_mail',cost:180},lantern:{name:'燈籠',img:'d_lantern',cost:220},well:{name:'水井',img:'d_well',cost:320},bridge:{name:'小木橋',img:'d_bridge',cost:350},arch:{name:'花架',img:'d_arch',cost:380},swing:{name:'秋千',img:'d_swing',cost:420},windmill:{name:'風車',img:'d_windmill',cost:500}};
 const BOOSTS={
  hammer:{name:'魔法鎚',img:'b_hammer',desc:'敲掉任一格（木箱也行）',need:{egg:3}},
  potion:{name:'彩虹藥水',img:'b_potion',desc:'把一顆寶石變成彩虹寶石',need:{wool:2}},
@@ -47,7 +47,7 @@ function renderFarm(force){
   return L<=0?`<div class="fp ready" data-act="plot" data-i="${i}"><img class="crop" src="a/${C.img}.png"><span class="lab">收成！</span></div>`
    :`<div class="fp grow" data-act="plot" data-i="${i}"><img class="sp" src="a/sprout.png"><span class="lab" data-end="${p.t0+C.t*1000}">${fmt(L)}</span><span class="cn">${C.name}</span></div>`;}).join('')+
   (S.farm.plots.length<MAXPLOT?`<div class="fp buy" data-act="land"><span>＋擴地<br><img class="ci" src="a/coin.png" alt="">${landCost()}</span></div>`:'');
- $('#fDecos').innerHTML=S.farm.decos.length?S.farm.decos.map((k,i)=>`<img data-act="deco" data-i="${i}" src="a/${DECOS[k].img}.png">`).join(''):'<div class="hint">在商店買裝飾，農場會更漂亮！</div>';
+ if(typeof renderYard==='function'){renderYard();}else $('#fDecos').innerHTML=S.farm.decos.length?S.farm.decos.map((k,i)=>`<img data-act="deco" data-i="${i}" src="a/${DECOS[k].img}.png">`).join(''):'<div class="hint">在商店買裝飾，農場會更漂亮！</div>';
  $('#fInv').innerHTML=Object.keys(PROD).map(k=>`<span><img src="a/${PROD[k].img}.png">${S.inv[k]||0}</span>`).join('')+
   Object.keys(BOOSTS).map(k=>`<span class="bo"><img src="a/${BOOSTS[k].img}.png">${k==='moves'?'+5':''}×${S.boost[k]||0}</span>`).join('');
 }
