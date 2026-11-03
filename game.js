@@ -105,7 +105,7 @@ const ctx=cv.getContext('2d');
 const ofx=document.createElement('canvas');ofx.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:25';app.appendChild(ofx);
 const octx=ofx.getContext('2d');
 let W,H,B,cs,DPR,wide=false,gardenMode=false;
-let tipZone=null;function tipFont(){return Math.min(21*S.fs,Math.max(18,innerWidth*.062));}
+let tipZone=null,compact=false,tipCol=false,tipShownAt=0;function tipFont(){return Math.min(21*S.fs,Math.max(18,innerWidth*.062));}
 function place(el,x,y,w,h){el.style.left=x+'px';el.style.top=y+'px';if(w!=null)el.style.width=w+'px';if(h!=null)el.style.height=h+'px';}
 function safe(){const p=document.createElement('div');p.style.cssText='position:fixed;top:env(safe-area-inset-top);bottom:env(safe-area-inset-bottom)';document.body.appendChild(p);const r=p.getBoundingClientRect();p.remove();return{t:r.top,b:innerHeight-r.bottom};}
 function layout(){
@@ -116,8 +116,32 @@ function layout(){
  if(gardenMode){place(scene,0,0,W,H);scene.style.borderRadius='0';
   const mw=Math.min(W,H)*.32;place(mascot,m,H-mw*1.25-90*fs,mw);renderGarden();return;}
  scene.style.borderRadius='';
- tipZone=null;
- if(!wide){
+ tipZone=null;compact=!wide&&H<800;document.body.classList.toggle('compact',compact);
+ if(compact){
+  const mm=6,sw=W-2*mm;
+  const rowH=Math.round(46*Math.min(fs,1.25));
+  place(hud,mm,sa.t+mm,sw,rowH);
+  const bsz=Math.round(rowH*.86);boostEl.style.flexDirection='row';boostEl.style.justifyContent='center';
+  boostEl.style.setProperty('--bsz',bsz+'px');
+  const mp=$('#movesPill').getBoundingClientRect(),gb=$('#btnMenu').getBoundingClientRect();
+  const bx=mp.right+6,bw2=Math.max(0,gb.left-6-bx);const bs=Math.max(30,Math.min(bsz,(bw2-14)/3));boostEl.style.setProperty('--bsz',bs+'px');place(boostEl,bx,sa.t+mm+(rowH-bs)/2,bw2,bs);
+  goalsEl.style.height='auto';goalsEl.style.width=sw+'px';const gH=Math.max(36,goalsEl.scrollHeight||0);
+  place(goalsEl,mm,sa.t+mm+rowH+4,sw,gH);
+  const top0=sa.t+mm+rowH+4+gH+6;
+  const mascotW=Math.min(W*.2,110*fs);const trayW=W-mascotW-2*mm;
+  const slot=(trayW-5*4)/NSLOT;const meterH=22*Math.min(fs,1.25);const trayH=meterH+4+slot;
+  const tipMin=Math.ceil(tipFont()*1.3*2+18);
+  B=Math.max(120,Math.min(sw,H-top0-trayH-tipMin-3*mm-sa.b));
+  const rest=H-top0-B-trayH-2*mm-sa.b;
+  place(scene,0,0,W,top0-2);
+  place(bw,(W-B)/2,top0,B,B);
+  tipZone={x:mm,y:top0+B+4,w:sw,h:rest-6,f:tipFont()};
+  const ty=H-sa.b-mm-trayH;
+  place(tray,mm,ty,trayW);tray.style.setProperty('--mh',meterH+'px');
+  $('#slots').style.gridTemplateColumns='repeat(6,1fr)';
+  place(mascot,W-mascotW-mm*.5,ty+trayH-mascotW*1.05,mascotW);
+ }else if(!wide){
+  boostEl.style.removeProperty('--bsz');tray.style.removeProperty('--mh');
   const mascotW=Math.min(W*.24,140*fs);const trayW=W-mascotW-2*m;
   const slot=(trayW-5*5)/NSLOT;const trayH=30*fs+6+slot;
   goalsEl.style.height='auto';goalsEl.style.width=(W-2*m)+'px';const gH=Math.max(goalH,goalsEl.scrollHeight||0);
@@ -315,7 +339,7 @@ function countTier(t){goalState.forEach(g=>{if(g.k==='tier'&&g.t===t&&g.left>0)g
 function countObs(k){goalState.forEach(g=>{if(g.k===k&&g.left>0)g.left--;});}
 function goalsDone(){return goalState.every(g=>g.left<=0);}
 let _gH=0;function updGoals(){
- const GL={gem:'消除',ice:'敲冰',crate:'開箱',vine:'解藤',acorn:'收集'};goalsEl.innerHTML=goalState.map(g=>g.k==='tier'?`<div class="goal tier ${g.left<=0?'done':''}"><img src="a/t${g.t}.png"><div class="gt"><b>合成 ${TIERNAME[g.t]} ×${Math.max(0,g.left)}${g.left<=0?' ✔':''}</b><small>點托盤裡兩個${TIERNAME[g.t-1]}</small></div></div>`:`<div class="goal ${g.left<=0?'done':''}"><small class="gl">${GL[g.k]}</small><img src="a/${g.k==='gem'?'g'+g.c:g.k}.png"><span>${g.left<=0?'✔':g.left}</span></div>`).join('');
+ const GL={gem:'消除',ice:'敲冰',crate:'開箱',vine:'解藤',acorn:'收集'};goalsEl.innerHTML=goalState.map(g=>g.k==='tier'?`<div class="goal tier ${g.left<=0?'done':''}"><img src="a/t${g.t}.png"><div class="gt"><b><i class="gx">合成 </i>${TIERNAME[g.t]} ×${Math.max(0,g.left)}${g.left<=0?' ✔':''}</b><small>點托盤裡兩個${TIERNAME[g.t-1]}</small></div></div>`:`<div class="goal ${g.left<=0?'done':''}"><small class="gl">${GL[g.k]}</small><img src="a/${g.k==='gem'?'g'+g.c:g.k}.png"><span>${g.left<=0?'✔':g.left}</span></div>`).join('');
  if(!wide&&!gardenMode){const h=goalsEl.scrollHeight;if(Math.abs(h-_gH)>2){_gH=h;layout();}}
 }
 function updHud(){$('#moves').textContent=movesLeft;$('#lvPill').textContent=(level.ch+1)+'-'+(((level.n-1)%10)+1);updBoost();}
@@ -562,10 +586,15 @@ function giftSeeds(){const need=tierNeed();if(!need||level.n>10)return;const t=n
  if(given){renderTray();save();say('送你'+TIERNAME[t]+'！點一下托盤合成看看～');}}
 function updFinger(){const f=$('#finger'),tip=$('#mergeTip');if(!f)return;const p=(level&&!busy&&!document.querySelector('.screen.show'))?mergePair():null;
  const on=p&&(!S.tutMerge||idleT>4000);
- if(!on){f.style.display='none';tip.style.display='none';return;}
+ if(!on){f.style.display='none';tip.style.display='none';tipShownAt=0;return;}
  const sl=$('#slots').children;if(!sl[p[1]])return;const a=sl[p[0]].getBoundingClientRect(),b=sl[p[1]].getBoundingClientRect();
  f.style.setProperty('--ax',(a.left+a.width*.35)+'px');f.style.setProperty('--ay',(a.top+a.height*.45)+'px');f.style.setProperty('--bx',(b.left+b.width*.35)+'px');f.style.setProperty('--by',(b.top+b.height*.45)+'px');f.style.display='block';
  const t=S.tray[p[0]];tip.innerHTML='👆 點一下發光的'+TIERNAME[t]+'<br>兩個一樣就會合成「'+TIERNAME[t+1]+'」！';tip.style.display='block';
+ if(tipZone&&compact){const z=tipZone;if(!tipShownAt)tipShownAt=Date.now();if(Date.now()-tipShownAt>7000)tipCol=true;
+  tip.classList.toggle('col',tipCol);tip.style.pointerEvents='auto';if(!tip.onclick)tip.onclick=()=>{tipCol=!tipCol;tipShownAt=Date.now();updFinger();};
+  if(tipCol){tip.innerHTML='❓ 提示';tip.style.fontSize=z.f+'px';tip.style.width='auto';tip.style.left=z.x+'px';tip.style.maxHeight='';tip.style.top=z.y+'px';return;}
+  tip.innerHTML='👆 點兩個發光的'+TIERNAME[t]+'<br>合成「'+TIERNAME[t+1]+'」！<small> ✕</small>';}
+ else{tip.classList.remove('col');tip.style.pointerEvents='';}
  if(tipZone){const z=tipZone;tip.style.fontSize=z.f+'px';tip.style.padding='6px 10px';tip.style.width=z.w+'px';tip.style.left=z.x+'px';tip.style.maxHeight=z.h+'px';tip.style.top=(z.y+Math.max(0,(z.h-tip.offsetHeight)/2))+'px';return;}
  tip.style.fontSize='';tip.style.padding='';tip.style.maxHeight='';
  const tw=Math.min(innerWidth-20,420);tip.style.width=tw+'px';tip.style.left=Math.max(10,Math.min(innerWidth-tw-10,(a.left+b.right)/2-tw/2))+'px';tip.style.top=Math.max(10,a.top-tip.offsetHeight-14)+'px';}

@@ -267,3 +267,26 @@ button{font-family:inherit;font-weight:900;border:0;cursor:pointer;touch-action:
 @keyframes glowMove{from{transform:translate(-5%,-3%)}to{transform:translate(5%,4%)}}
 #mascot img{animation:breathe 3s ease-in-out infinite;transform-origin:50% 100%}
 #boardWrap{overflow:hidden}#board{position:relative;z-index:1}
+
+/* v2.0.2 compact short-screen layout */
+.compact #hud .pill{font-size:calc(19px*var(--fs));padding:.15em .55em;border-width:2px}
+.compact #hud .iconBtn{width:calc(40px*var(--fs));height:calc(40px*var(--fs));font-size:calc(22px*var(--fs))}
+.compact #boost{gap:6px}
+.compact .bst{width:var(--bsz);height:var(--bsz);border-width:2px}
+.compact .bst span{font-size:calc(13px*var(--fs));right:-5px;bottom:-5px}
+.compact .bst em{font-size:calc(12px*var(--fs))}
+.compact #goals{flex-wrap:nowrap!important;gap:6px}
+.compact .goal{padding:2px 8px;font-size:calc(21px*var(--fs));border-width:2px;white-space:nowrap}
+.compact .goal img{width:calc(30px*var(--fs));height:calc(30px*var(--fs))}
+.compact .goal .gl,.compact .goal.tier small{display:none}
+.compact .goal.tier b{font-size:calc(19px*var(--fs))}
+.compact #meter{height:var(--mh)}
+.compact #meterTxt{font-size:calc(15px*var(--fs))}
+.compact #tray{gap:4px}.compact #slots{gap:4px}
+#mergeTip.col{padding:4px 12px!important;border-width:3px}
+#mergeTip small{font-size:.7em;opacity:.6}
+.goal i.gx{font-style:normal}.compact .goal i.gx{display:none}
+.compact #hud{justify-content:flex-start;gap:4px}.compact #btnMenu{margin-left:auto}
+.compact #hud .pill{font-size:calc(17px*var(--fs));padding:.12em .45em}
+.compact .pill .sm{font-size:.62em}
+.compact #boost{gap:7px;justify-content:space-evenly!important}
