@@ -372,3 +372,39 @@ body.decoEdit #gTip{position:fixed;top:calc(8px + env(safe-area-inset-top));left
 body.decoEdit #gStore{position:fixed;top:calc(8px + env(safe-area-inset-top) + 4.2em*var(--fs));left:50%;transform:translateX(-50%);margin:0}
 body.decoEdit #gStore.hot{transform:translateX(-50%) scale(1.04)}
 body.decoEdit .gBtns .big{font-size:calc(22px*var(--fs));padding:8px 18px}
+
+/* v2.1.4: garden/farm layout — UI in fixed top/bottom bars, items only in the free zone */
+#gardenBar{position:fixed!important;inset:0;padding:0!important;display:block!important;pointer-events:none;z-index:30}
+#gardenBar.hidden{display:none!important}
+#gTopBar,#gBotBar{position:absolute;left:0;right:0;pointer-events:auto;display:flex;flex-direction:column;align-items:center;box-sizing:border-box;background:#2b1d4ae6;box-shadow:0 0 14px #0008}
+#gTopBar{top:0;padding:calc(6px + env(safe-area-inset-top)) 8px 6px;border-radius:0 0 18px 18px}
+#gBotBar{bottom:0;padding:6px 8px calc(8px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0}
+#gardenBar .gTip,body.decoEdit #gTip{position:static!important;transform:none!important;width:auto!important;max-width:96vw;margin:0;background:none;border:0;color:#fff;font-weight:900;font-size:calc(20px*var(--fs))!important;line-height:1.3;text-align:center;padding:2px 6px!important;text-shadow:0 2px 0 #000}
+#gardenBar .gTip.edit{color:#ffe066}
+body.decoEdit #gStore,#gStore{position:static!important;transform:none!important;margin:6px auto 0!important}
+body.decoEdit #gStore.hot{transform:scale(1.03)!important}
+#gardenBar .gBtns{margin:0;gap:10px;flex-wrap:nowrap}
+#gardenBar .gBtns .big{font-size:calc(21px*var(--fs))!important;padding:8px 16px!important;white-space:nowrap}
+body.gardenOn #mascot,body.gardenOn #bubble{display:none!important}
+.sRow{display:flex;gap:6px;overflow-x:auto;justify-content:center;padding-top:4px}
+.sEmpty{color:#fff;font-weight:700;font-size:calc(16px*var(--fs));text-align:center}
+#fTip{background:#ff6f00;color:#fff;font-weight:900;font-size:calc(18px*var(--fs));border:3px solid #fff;border-radius:14px;padding:6px 10px;margin:0 0 6px;text-align:center}
+#fStore{margin:0 0 6px!important;width:auto!important}
+#sellBack{position:fixed;inset:0;z-index:118;background:#0003}
+#sellPop{position:fixed;z-index:120;width:min(92vw,320px);box-sizing:border-box;background:linear-gradient(#fffdf5,#ffe9c4);color:#4a2370;border:4px solid #fff;border-radius:20px;box-shadow:0 6px 0 #c48a3a,0 10px 24px #0009;padding:10px 12px;text-align:center}
+#sellPop h3{margin:0 0 4px;font-size:calc(22px*var(--fs));display:flex;align-items:center;justify-content:center;gap:6px}
+#sellPop h3 img{height:1.5em}
+#sellPop p{margin:0 0 8px;font-size:calc(16px*var(--fs));font-weight:700;line-height:1.35}
+#sellPop .row{display:flex;gap:8px;justify-content:center;margin:0}
+#sellPop .big{font-size:calc(20px*var(--fs));padding:8px 14px;white-space:nowrap}
+.deco.selected,.yi.selected{outline:4px solid #ffe066;outline-offset:-2px;border-radius:14px}
+
+/* v2.1.4: keep everything inside the visible viewport */
+#app{height:calc(var(--vh,1vh)*100);bottom:auto}
+.screen{overflow-y:auto;overflow-x:hidden;justify-content:safe center;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);box-sizing:border-box;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#farm,#map{overflow:hidden}
+.panel{max-height:calc(var(--vh,1vh)*100 - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important;max-width:calc(100vw - 16px);box-sizing:border-box}
+.shopList{max-height:calc(var(--vh,1vh)*55)}
+.big{max-width:calc(100vw - 24px);box-sizing:border-box}
+#gardenBar .gBtns{flex-wrap:wrap}
+#sellPop .row{flex-wrap:nowrap}#sellPop .big{margin:4px;padding:8px 12px;min-height:52px;font-size:calc(19px*var(--fs))}
