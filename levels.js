@@ -1,11 +1,16 @@
 'use strict';
-/* 花語寶石園 v2 — 5 chapters x 10 hand-tuned levels */
+/* 花語寶石園 v2 — 10 chapters x 10 hand-tuned levels */
 const CHAPTERS=[
  {name:'春之花園',bg:'a/bg.jpg',intro:'春天來了！先熟悉寶石消除和合成吧。',mech:null},
  {name:'蘑菇森林',bg:'a/bg2.jpg',intro:'森林裡的寶石被冰凍住了！在冰塊上消除寶石就能把冰敲碎。',mech:'ice'},
  {name:'海邊小屋',bg:'a/bg3.jpg',intro:'海邊有很多木箱！在木箱旁邊消除寶石就能打開它。金色橡果要讓它掉到最下面才算收集。',mech:'crate'},
  {name:'雪地小屋',bg:'a/bg4.jpg',intro:'雪地的寶石被藤蔓纏住了，不能移動！讓它參加消除就能解開藤蔓。',mech:'vine'},
- {name:'天空水晶園',bg:'a/bg5.jpg',intro:'最後的天空花園！冰塊、木箱、藤蔓全都出現了，加油！',mech:'all'}
+ {name:'天空水晶園',bg:'a/bg5.jpg',intro:'天空花園！冰塊、木箱、藤蔓全都出現了，加油！',mech:'all'},
+ {name:'苔蘚溪谷',bg:'a/bg6.jpg',intro:'溪谷長滿了會蔓延的苔蘚！在苔蘚上消除寶石清掉它，如果一步都沒清到，苔蘚會長大喔。',mech:'moss'},
+ {name:'石頭山丘',bg:'a/bg7.jpg',intro:'山丘上有堅硬的石塊，要在旁邊消除 3 次才會碎開！',mech:'stone'},
+ {name:'螢火蟲夜林',bg:'a/bg8.jpg',intro:'夜晚的森林裡，苔蘚和石塊一起出現了，小心步數！',mech:'mossstone'},
+ {name:'彩虹瀑布',bg:'a/bg9.jpg',intro:'彩虹瀑布前，所有機關都會出現，六種寶石更難配對了！',mech:'all2'},
+ {name:'星光城堡',bg:'a/bg10.jpg',intro:'最後的星光城堡！集合所有的力量，讓整座花園永遠綻放！',mech:'final'}
 ];
 /* layout rectangles: [r0,r1,c0,c1,ch]  ch: i=ice I=double ice c=crate C=double crate v=vine a=acorn */
 const LY={
@@ -49,6 +54,17 @@ const LY={
  m7:[[0,7,0,7,'i'],[2,5,2,5,'I'],[1,1,1,6,'v']],
  m8:[[2,2,0,7,'v'],[5,5,0,2,'C'],[5,5,5,7,'C'],[6,7,0,7,'I'],[0,0,2,2,'a'],[0,0,5,5,'a']],
  m9:[[1,6,1,6,'I'],[3,4,0,7,'v'],[7,7,0,1,'C'],[7,7,6,7,'C']],
+ /* v2.1 ch6-10: m=moss S=stone(3 hits) */
+ s1:[[2,3,0,7,'m']], s2:[[0,1,0,7,'m'],[6,7,0,7,'m']], s3:[[2,5,2,5,'m']], s4:[[0,7,3,4,'m']], s5:[[3,4,0,7,'m'],[6,7,2,5,'i']],
+ s6:[[0,2,0,7,'m'],[7,7,2,5,'c']], s7:[[2,5,0,1,'m'],[2,5,6,7,'m'],[3,4,3,4,'C']], s8:[[5,7,0,7,'m'],[1,1,1,6,'v']], s9:[[0,7,0,1,'m'],[0,7,6,7,'m'],[3,4,3,4,'I']], s10:[[1,6,1,6,'m'],[0,0,3,4,'a']],
+ t1:[[7,7,3,4,'S']], t2:[[6,6,1,2,'S'],[6,6,5,6,'S']], t3:[[3,4,3,4,'S']], t4:[[7,7,0,1,'S'],[7,7,6,7,'S'],[5,5,3,4,'c']], t5:[[4,4,1,6,'S']],
+ t6:[[3,3,2,5,'S'],[5,7,0,7,'i']], t7:[[6,7,3,4,'S'],[2,2,0,7,'v']], t8:[[4,4,0,1,'S'],[4,4,6,7,'S'],[0,0,3,4,'a']], t9:[[2,2,2,5,'S'],[5,5,2,5,'S']], t10:[[3,4,2,5,'S'],[6,7,0,7,'I']],
+ n1:[[0,1,0,7,'m'],[7,7,3,4,'S']], n2:[[2,5,0,0,'m'],[2,5,7,7,'m'],[4,4,3,4,'S']], n3:[[5,7,0,7,'m'],[3,3,2,5,'S']], n4:[[0,7,0,0,'m'],[0,7,7,7,'m'],[7,7,2,5,'S']], n5:[[3,4,0,7,'m'],[1,1,2,5,'S'],[0,0,0,0,'a'],[0,0,7,7,'a']],
+ n6:[[0,2,0,7,'m'],[5,5,1,6,'S']], n7:[[2,5,2,5,'m'],[7,7,0,1,'S'],[7,7,6,7,'S'],[1,1,0,7,'v']], n8:[[6,7,0,7,'m'],[4,4,2,5,'S'],[0,1,0,7,'i']], n9:[[0,7,3,4,'m'],[3,4,0,1,'S'],[3,4,6,7,'S']], n10:[[1,6,1,6,'m'],[3,4,3,4,'S'],[0,0,0,7,'i']],
+ r1:[[0,7,0,7,'i'],[3,4,2,5,'S']], r2:[[2,3,0,7,'m'],[6,7,0,7,'I']], r3:[[1,1,0,7,'v'],[5,5,1,6,'S'],[6,7,0,7,'m']], r4:[[0,3,0,7,'i'],[4,4,0,7,'c'],[6,6,2,5,'S']], r5:[[2,5,2,5,'m'],[1,1,0,7,'v'],[7,7,1,2,'C'],[7,7,5,6,'C']],
+ r6:[[0,7,0,0,'m'],[0,7,7,7,'m'],[2,5,2,5,'I'],[6,6,3,4,'S']], r7:[[3,3,0,7,'v'],[5,7,0,7,'m'],[4,4,3,4,'S']], r8:[[0,1,0,7,'m'],[3,4,0,7,'i'],[6,6,1,6,'S']], r9:[[1,6,1,6,'I'],[0,0,0,7,'m'],[7,7,2,5,'S']], r10:[[0,2,0,7,'m'],[3,3,0,7,'v'],[5,5,2,5,'S'],[6,7,0,7,'i']],
+ x1:[[0,7,0,7,'i'],[2,5,2,5,'m'],[7,7,3,4,'S']], x2:[[1,1,0,7,'v'],[3,4,0,7,'m'],[6,6,1,2,'S'],[6,6,5,6,'S']], x3:[[0,3,0,7,'I'],[5,5,0,7,'m'],[7,7,3,4,'S']], x4:[[2,5,0,7,'m'],[1,1,2,5,'S'],[7,7,0,7,'c']], x5:[[0,7,0,1,'m'],[0,7,6,7,'m'],[3,4,2,5,'S'],[0,0,3,4,'a']],
+ x6:[[0,1,0,7,'m'],[2,2,0,7,'v'],[4,7,0,7,'i'],[5,5,3,4,'S']], x7:[[1,6,1,6,'m'],[0,0,0,7,'I'],[7,7,1,6,'S']], x8:[[2,3,0,7,'m'],[5,5,0,7,'v'],[7,7,2,5,'S'],[0,0,0,0,'a'],[0,0,7,7,'a']], x9:[[0,7,0,7,'i'],[1,6,1,6,'m'],[3,4,3,4,'S'],[0,0,3,4,'C']], x10:[[0,2,0,7,'m'],[3,3,0,7,'v'],[4,4,1,6,'S'],[5,7,0,7,'I']],
  m10:[[0,7,0,7,'i'],[2,5,1,6,'I'],[3,3,0,7,'v'],[6,6,2,5,'C'],[0,0,1,1,'a'],[0,0,6,6,'a'],[0,0,3,3,'a']]
 };
 /* goals: g<color>:<n>  t<tier>:<n>  ice crate vine (auto counted)  a:<n> acorns */
@@ -67,17 +83,64 @@ const LV=[
  [26,6,'v2','vine g0:16'],[27,6,'v5','vine ice'],[27,6,'vc','vine crate'],[27,6,'vi2','vine ice g4:18'],[28,6,'mx1','vine ice a:2'],
  // 第5章 天空水晶園（綜合）
  [26,6,'m1','vine crate ice'],[26,6,'m2','ice crate a:2'],[27,6,'m3','vine crate ice'],[27,6,'m4','crate ice a:1 g2:18'],[28,6,'m5','vine ice crate t3:1'],
- [28,6,'m6','vine crate ice a:2'],[28,6,'m7','ice vine g5:18'],[29,6,'m8','vine crate ice a:2'],[30,6,'m9','ice vine crate t4:1'],[32,6,'m10','ice vine crate a:3']
+ [28,6,'m6','vine crate ice a:2'],[28,6,'m7','ice vine g5:18'],[29,6,'m8','vine crate ice a:2'],[30,6,'m9','ice vine crate t4:1'],[32,6,'m10','ice vine crate a:3'],
+ // 第6章 苔蘚溪谷（苔蘚）
+ [24,5,'s1','moss'],[24,5,'s2','moss'],[25,5,'s3','moss g1:16'],[25,5,'s4','moss t2:1'],[26,5,'s5','moss ice'],
+ [26,5,'s6','moss crate'],[26,6,'s7','moss crate'],[27,6,'s8','moss vine'],[27,6,'s9','moss ice'],[28,6,'s10','moss a:2'],
+ // 第7章 石頭山丘（石塊）
+ [24,5,'t1','stone g2:14'],[25,5,'t2','stone'],[25,5,'t3','stone g0:16'],[26,5,'t4','stone crate'],[26,6,'t5','stone'],
+ [27,6,'t6','stone ice'],[27,6,'t7','stone vine'],[27,6,'t8','stone a:2'],[28,6,'t9','stone t3:1'],[28,6,'t10','stone ice'],
+ // 第8章 螢火蟲夜林（苔蘚＋石塊）
+ [26,6,'n1','moss stone'],[26,6,'n2','moss stone'],[27,6,'n3','moss stone'],[27,6,'n4','moss stone g4:16'],[27,6,'n5','moss stone a:2'],
+ [28,6,'n6','moss stone'],[28,6,'n7','moss stone vine'],[28,6,'n8','moss stone ice'],[29,6,'n9','moss stone t3:1'],[29,6,'n10','moss stone ice'],
+ // 第9章 彩虹瀑布（綜合）
+ [27,6,'r1','ice stone'],[27,6,'r2','moss ice'],[28,6,'r3','vine stone moss'],[28,6,'r4','ice crate stone'],[28,6,'r5','moss vine crate'],
+ [29,6,'r6','moss ice stone'],[29,6,'r7','vine moss stone'],[29,6,'r8','moss ice stone g3:16'],[30,6,'r9','ice moss stone'],[30,6,'r10','moss vine stone ice'],
+ // 第10章 星光城堡（終章）
+ [29,6,'x1','ice moss stone'],[29,6,'x2','vine moss stone'],[30,6,'x3','ice moss stone'],[30,6,'x4','moss stone crate'],[30,6,'x5','moss stone a:1'],
+ [31,6,'x6','moss vine ice stone'],[31,6,'x7','moss ice stone'],[31,6,'x8','moss vine stone a:2'],[32,6,'x9','ice moss stone crate'],[33,6,'x10','moss vine stone ice t4:1']
 ];
+LV.length=50;CHAPTERS.length=5;/* v2.0.5: 50 levels; 51-100 next release */
 const NLEV=LV.length;
-function chapterOf(n){return Math.min(4,Math.floor((n-1)/10));}
+function chapterOf(n){return Math.min(CHAPTERS.length-1,Math.floor((n-1)/10));}
 function levelDef(n){
  n=Math.max(1,Math.min(NLEV,n));const [moves,colors,lk,gs]=LV[n-1];
  const map=Array.from({length:8},()=>Array(8).fill('.'));
  LY[lk].forEach(([r0,r1,c0,c1,ch])=>{for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++)map[r][c]=ch;});
  const cnt=ch=>map.flat().filter(x=>ch.includes(x)).length;
  const goals=gs.split(' ').map(t=>{
-  if(t==='ice')return{k:'ice',n:cnt('iI')};if(t==='crate')return{k:'crate',n:cnt('cC')};if(t==='vine')return{k:'vine',n:cnt('v')};
+  if(t==='ice')return{k:'ice',n:cnt('iI')};if(t==='crate')return{k:'crate',n:cnt('cCS')>cnt('cC')?cnt('cC'):cnt('cC')};if(t==='vine')return{k:'vine',n:cnt('v')};if(t==='moss')return{k:'moss',n:cnt('m')};if(t==='stone')return{k:'stone',n:cnt('S')*3};
   const [a,b]=t.split(':');if(a==='a')return{k:'acorn',n:+b};if(a[0]==='g')return{k:'gem',c:+a.slice(1),n:+b};return{k:'tier',t:+a.slice(1),n:+b};});
- return{n,ch:chapterOf(n),colors,moves,goals,map};
+ return hard({n,ch:chapterOf(n),colors,moves,goals,map});
 }
+/* v2.1 difficulty: goal numbers x2 (levels 1-2 x1.5), moves +40% (1-2 +30%).
+   Ice/crate: single layers become double; goals count every layer hit (= 2x). */
+const HARD={mul:2,tutMul:1.5,moves:1.4,tutMoves:1.3};
+/* balance tiers from bot simulation: 1=goals x1.5, 2=+half double layers & slower moss, 3=goals x1.25, single layers */
+const NEEDM={"13":46,"14":53,"15":49,"17":52,"19":46,"20":48,"22":85,"24":84,"25":51,"28":71,"29":40,"30":85,"33":49,"34":47,"36":59,"37":98,"38":47,"39":85,"40":170,"41":156,"42":168,"43":88,"44":130,"45":69,"46":194,"47":164,"48":161,"49":141,"50":172,"52":46,"58":111,"59":61,"60":161,"66":77,"67":61,"68":92,"70":233,"72":76,"73":105,"74":104,"75":255,"76":51,"77":80,"78":65,"80":98,"81":79,"82":168,"83":158,"84":58,"85":62,"86":131,"87":91,"88":85,"89":63,"90":88,"91":103,"92":62,"93":90,"94":86,"95":107,"96":96,"97":79,"98":290,"99":115,"100":142};/* bot-measured moves; capped at +50% */
+const BONUS={42:14,45:8,46:16,47:8,48:32,49:10,50:18,59:12,75:8,91:8,95:12,98:10,99:8};/* sim-verified extra moves */
+const TIER={"11":1,"13":1,"14":1,"15":1,"17":1,"19":1,"20":2,"22":2,"24":2,"25":2,"27":2,"28":1,"30":3,"32":1,"33":1,"34":2,"36":2,"37":2,"38":1,"39":3,"40":3,"41":3,"42":4,"43":3,"44":3,"45":2,"46":4,"47":3,"48":4,"49":3,"50":4,"52":1,"57":2,"58":3,"59":3,"60":4,"66":3,"67":2,"68":4,"70":3,"71":2,"72":2,"73":3,"74":2,"75":4,"76":1,"77":2,"78":2,"79":1,"80":1,"81":4,"82":3,"83":3,"84":1,"85":2,"86":2,"87":3,"88":1,"89":2,"90":3,"91":3,"92":2,"93":2,"95":4,"96":2,"97":3,"98":4,"99":3,"100":2};
+function hard(L){const tut=L.n<=2,tr=TIER[L.n]||0,m=tut?HARD.tutMul:tr>=4?1:tr>=3?1.25:tr>=1?1.5:HARD.mul;
+ {const b=L.moves;L.moves=Math.round(b*(tut?HARD.tutMoves:tr?1.5:HARD.moves));if(!tut&&NEEDM[L.n])L.moves=Math.min(Math.round(b*1.5),Math.max(L.moves,NEEDM[L.n]));}L.moves+=BONUS[L.n]||0;L.tier=tr;if(tr>=2)L.mossSlow=true;
+ let k=0;L.map=L.map.map(r=>r.map(ch=>{if(ch!=='i'&&ch!=='c')return ch;k++;if(tr>=3||(tr==2&&k%2))return ch;return ch==='i'?'I':'C';}));L.layerGoals=true;
+ const lay=ch=>L.map.flat().filter(x=>x===ch.toUpperCase()).length*2+L.map.flat().filter(x=>x===ch).length;
+ L.goals=L.goals.map(g=>{g=Object.assign({},g);
+  if(g.k==='ice')g.n=lay('i');else if(g.k==='crate')g.n=lay('c');
+  else if(g.k==='vine'||g.k==='moss'||g.k==='stone')g.n=g.n;
+  else g.n=Math.max(1,Math.round(g.n*m));if(tr>=4&&g.k==='acorn')g.n=1;return g;});
+ if(L.goals.every(g=>g.k==='vine'||g.k==='moss'||g.k==='stone'))L.goals.push({k:'gem',c:L.n%L.colors,n:tr>=2?16:24});
+ return L;
+}
+/* v2.1 chapter-end story: cheer line + intro to next chapter (10 segments, one story) */
+const STORY=[
+ {cheer:'太棒了！春天的花全開了！',next:'可是森林那邊吹來一陣寒氣……蘑菇森林被冰封住了！我們去把冰融化吧！'},
+ {cheer:'冰都融化了，你好厲害！',next:'融化的冰水一路流到海邊。聽說海邊小屋的木箱裡，藏著神秘的金色橡果……'},
+ {cheer:'橡果收集好了！真是尋寶高手！',next:'橡果裡藏著一張地圖，指向北方的雪地小屋。可是那裡的寶石被藤蔓纏住了！'},
+ {cheer:'藤蔓解開了！你是最強的園丁！',next:'解開的藤蔓長成一道通往天空的階梯……天空水晶園在等著我們！'},
+ {cheer:'天空花園亮起來了！好美啊！',next:'水晶的光照出山下一條小溪。苔蘚溪谷的苔蘚正在偷偷蔓延，快去阻止它！'},
+ {cheer:'溪谷又變清澈了！謝謝你！',next:'溪水的源頭在石頭山丘，大石頭把水路擋住了，我們一起把它敲開！'},
+ {cheer:'石頭全敲開了！好有力氣！',next:'天黑了，螢火蟲帶我們走進夜林。苔蘚和石頭會一起出現，要小心步數喔！'},
+ {cheer:'螢火蟲都在為你發光！',next:'穿過夜林，前方傳來轟隆隆的水聲……是彩虹瀑布！最後的水晶就在瀑布後面。'},
+ {cheer:'彩虹為你出現了！只差一步！',next:'拿到彩虹水晶，星光城堡的大門打開了。讓整座花園永遠綻放吧！'},
+ {cheer:'你做到了！所有花園都復活了！',next:'謝謝你一路的陪伴。來看看我們一起完成的、最美的花園吧！'}
+];

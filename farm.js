@@ -47,7 +47,7 @@ function renderFarm(force){
   return L<=0?`<div class="fp ready" data-act="plot" data-i="${i}"><img class="crop" src="a/${C.img}.png"><span class="lab">收成！</span></div>`
    :`<div class="fp grow" data-act="plot" data-i="${i}"><img class="sp" src="a/sprout.png"><span class="lab" data-end="${p.t0+C.t*1000}">${fmt(L)}</span><span class="cn">${C.name}</span></div>`;}).join('')+
   (S.farm.plots.length<MAXPLOT?`<div class="fp buy" data-act="land"><span>＋擴地<br>🪙${landCost()}</span></div>`:'');
- $('#fDecos').innerHTML=S.farm.decos.length?S.farm.decos.map(k=>`<img data-act="deco" src="a/${DECOS[k].img}.png">`).join(''):'<div class="hint">在商店買裝飾，農場會更漂亮！</div>';
+ $('#fDecos').innerHTML=S.farm.decos.length?S.farm.decos.map((k,i)=>`<img data-act="deco" data-i="${i}" src="a/${DECOS[k].img}.png">`).join(''):'<div class="hint">在商店買裝飾，農場會更漂亮！</div>';
  $('#fInv').innerHTML=Object.keys(PROD).map(k=>`<span><img src="a/${PROD[k].img}.png">${S.inv[k]||0}</span>`).join('')+
   Object.keys(BOOSTS).map(k=>`<span class="bo"><img src="a/${BOOSTS[k].img}.png">${k==='moves'?'+5':''}×${S.boost[k]||0}</span>`).join('');
 }
@@ -60,9 +60,9 @@ function farmAct(act,i,el){
   sfx('tap');farmSay(CROPS[p.k].name+'還要 '+fmt(plotLeft(p))+' 才會熟喔～關掉遊戲也會繼續長！');return;}
  if(act==='animal'){const a=S.farm.animals[i],A=ANIMALS[a.k];sfx(A.snd);
   if(animLeft(a)<=0){S.inv[A.prod]=(S.inv[A.prod]||0)+1;a.t0=nowS();save();floatAt('+1 '+PROD[A.prod].name,el);const r=el.getBoundingClientRect();oburst(r.left+r.width/2,r.top,'#fff59d',16);renderFarm(true);}
-  else{el.classList.remove('wig');void el.offsetWidth;el.classList.add('wig');farmSay(A.name+'：再等 '+fmt(animLeft(a))+' 就有'+PROD[A.prod].name+'！');}return;}
+  else{el.classList.remove('wig');void el.offsetWidth;el.classList.add('wig');farmSellMenu('animal',i,A.name+'：再等 '+fmt(animLeft(a))+' 就有'+PROD[A.prod].name+'！');}return;}
  if(act==='land'){const c=landCost();if(S.coins<c){sfx('nope');farmSay('金幣不夠，再收成或過關賺金幣吧！');return;}S.coins-=c;S.farm.plots.push(null);save();sfx('seed');renderFarm(true);farmSay('農地變大了！');return;}
- if(act==='deco'){sfx('voice');el.classList.remove('wig');void el.offsetWidth;el.classList.add('wig');return;}
+ if(act==='deco'){sfx('voice');el.classList.remove('wig');void el.offsetWidth;el.classList.add('wig');return farmSellMenu('deco',i);}
  if(act==='shop')return openShop(el.dataset.tab);
 }
 function seedPicker(i){
@@ -147,3 +147,22 @@ async function useBoostAt(r,c){const k=boostMode,g=grid[r][c];
  }catch(e){console.error(e);}
  await endTurn();
 }
+
+/* ---- v2.0.5: sell garden items, animals, decorations ---- */
+function sellMenu(img,name,info,v,onSell){const wasBusy=typeof busy!=='undefined'?busy:false;try{busy=true;}catch(e){}
+ modal(`<h2><img src="${img}" style="height:1.6em;vertical-align:middle"> ${name}</h2>${info?'<p>'+info+'</p>':''}
+ <div class="row"><button class="big glow" id="sSell">賣掉 🪙 +${v}</button></div>
+ <div class="row"><button class="big alt" id="sCancel">取消</button></div>`);
+ const close=()=>{$('#modal').classList.remove('show');try{busy=wasBusy;}catch(e){}};
+ $('#sSell').onclick=()=>{onSell();S.coins=(S.coins||0)+v;save();sfx('coin');close();floatText('+'+v+' 🪙',innerWidth/2,innerHeight*.45);};
+ $('#sCancel').onclick=close;}
+function gardenMenu(d){const idx=S.garden.indexOf(d);if(idx<0||document.querySelector('#modal.show'))return;
+ const g=(level&&typeof tierNeed==='function')?tierNeed():null;
+ let info='花園裡的植物可以賣掉換金幣。';
+ if(g)info+=`<br>⚠️ 這關目標要在托盤合成「${TIERNAME[g.t]}」，花園裡的植物不能拿來合成，賣掉不影響目標。`;
+ sellMenu('a/t'+d.t+'.png',TIERNAME[d.t],info,sellVal(d.t),()=>{const j=S.garden.indexOf(d);if(j>=0)S.garden.splice(j,1);renderGarden();});}
+function farmSellMenu(kind,i,info){
+ if(kind==='animal'){const a=S.farm.animals[i];if(!a)return;const A=ANIMALS[a.k];const v=Math.floor(A.cost/2);
+  sellMenu('a/'+A.img+'.png',A.name,(info?info+'<br>':'')+'賣掉可拿回一半價錢。',v,()=>{S.farm.animals.splice(i,1);renderFarm(true);});}
+ else{const k=S.farm.decos[i];if(!k)return;const D=DECOS[k];const v=Math.floor(D.cost/2);
+  sellMenu('a/'+D.img+'.png',D.name,'賣掉可拿回一半價錢。',v,()=>{S.farm.decos.splice(i,1);renderFarm(true);});}}
