@@ -101,6 +101,7 @@
 
   <div id="modal" class="screen"><div class="panel" id="panel"></div></div>
 </div>
+<script src="analytics.js"></script>
 <script src="levels.js"></script>
 <script src="game.js"></script>
 <script src="farm.js"></script>
@@ -108,6 +109,7 @@
 <script>
 $("#mapBack").onclick=()=>goHome();$("#fBack").onclick=()=>goHome();$("#fShop").onclick=()=>openShop();
 $("#endFarm").onclick=()=>openFarm();$("#endMap").onclick=()=>openMap();$("#endHome").onclick=()=>goHome();
+GBGStats&&GBGStats.trackVisit&&GBGStats.trackVisit();
 </script>
 </body>
 </html>

@@ -614,10 +614,12 @@ function settings(){
  modal(`<h2>設定</h2><div class="lbl">字體大小</div><div class="row">${fsOpt.map(([v,t])=>`<button class="opt ${Math.abs(S.fs-v)<.01?'on':''}" data-fs="${v}">${t}</button>`).join('')}</div>
  <div class="lbl">音效 / 音樂</div><div class="row"><button class="opt ${S.sfx?'on':''}" id="oS">音效 ${S.sfx?'開':'關'}</button><button class="opt ${S.music?'on':''}" id="oM">音樂 ${S.music?'開':'關'}</button></div><div class="row vol"><label>🎵 音樂音量 <input type="range" id="vM" min="0" max="100" value="${Math.round((S.musicVol==null?.7:S.musicVol)*100)}"></label></div><div class="row vol"><label>🔔 音效音量 <input type="range" id="vS" min="0" max="100" value="${Math.round((S.sfxVol==null?.8:S.sfxVol)*100)}"></label></div>
  <div class="lbl">夥伴：${CHARS[S.char||'fox'].full}</div><div class="row"><button class="opt" id="oC">更換夥伴</button></div>
+ <div class="lbl" style="opacity:.7;font-size:calc(14px*var(--fs))">裝置</div><div class="row"><button class="opt ${typeof GBGStats!=='undefined'&&GBGStats.isOwner()?'on':''}" id="oOwn" style="font-size:calc(14px*var(--fs));opacity:.85">這是我的裝置（不計入統計）</button></div>
  <p style="font-size:calc(18px*var(--fs))">玩法：用一根手指把寶石往旁邊滑，三個一樣就消除。<br>消除會累積能量變成種子，點兩個一樣的植物就能合成升級！</p>
  <div class="row"><button class="big glow" id="oX">繼續</button>${inGame?'<button class="big alt" id="oH">回首頁</button>':''}</div>`);
  document.querySelectorAll('[data-fs]').forEach(b=>b.onclick=()=>{S.fs=+b.dataset.fs;save();applyFs();layout();renderTray();settings();});
  $('#oS').onclick=()=>{S.sfx=!S.sfx;save();settings();};$('#oM').onclick=()=>{S.music=!S.music;save();setMusic();settings();};$('#vM').oninput=e=>{S.musicVol=e.target.value/100;setMusic();};$('#vM').onchange=save;$('#vS').oninput=e=>{S.sfxVol=e.target.value/100;setMusic();};$('#vS').onchange=()=>{save();initAudio();sfx('tap');};
+ if(typeof GBGStats!=='undefined'){const ow=$('#oOwn');if(ow)ow.onclick=()=>{GBGStats.setOwner(!GBGStats.isOwner());settings();};}
  $('#oC').onclick=()=>{const wasLevel=level;buildSelect();show('select');if(wasLevel){setGameVisible(false);level=null;}};
  $('#oX').onclick=()=>{show(inGame?null:'home');};
  if(inGame)$('#oH').onclick=()=>{setGameVisible(false);goHome();};
